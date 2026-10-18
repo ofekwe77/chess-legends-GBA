@@ -68,6 +68,8 @@ cmd_validate() {
     "$HOSTCXX" $HOST_FLAGS core/*.cpp tools/validation/validate.cpp -static -o build_host/validate.exe
     ./build_host/validate.exe "$@"
     $PYTHON tools/check_glyphs.py
+    $PYTHON tools/check_xm.py > build_host/check_xm.txt || { cat build_host/check_xm.txt; return 1; }
+    tail -1 build_host/check_xm.txt
 }
 
 cmd_harness() {

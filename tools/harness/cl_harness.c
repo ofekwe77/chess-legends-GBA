@@ -31,6 +31,7 @@
 #include <mgba/core/blip_buf.h>
 #include <mgba/core/log.h>
 #include <mgba-util/vfs.h>
+#include <mgba/internal/arm/arm.h>
 
 #include <math.h>
 #include <stddef.h>
@@ -697,6 +698,26 @@ static int run_script(FILE* script)
             if(! g_quiet)
             {
                 printf("ok cmd %u acknowledged after %d frames\n", id, waited);
+            }
+        }
+        else if(! strcmp(c, "regs"))
+        {
+            /* Debugging a stalled ROM: CPU registers and the code addresses found on the stack. */
+            struct ARMCore* cpu = (struct ARMCore*) g_core->cpu;
+            uint32_t sp = (uint32_t) cpu->gprs[ARM_SP];
+            printf("  pc 0x%08X  lr 0x%08X  sp 0x%08X\n", (unsigned) cpu->gprs[ARM_PC], (unsigned) cpu->gprs[ARM_LR],
+                   (unsigned) sp);
+            int shown = 0;
+
+            for(uint32_t address = sp; address < 0x03007F00u && shown < 24; address += 4)
+            {
+                uint32_t value = g_core->busRead32(g_core, address);
+
+                if((value >= 0x08000000u && value < 0x0A000000u) || (value >= 0x03000000u && value < 0x03008000u))
+                {
+                    printf("  stack 0x%08X: 0x%08X\n", (unsigned) address, (unsigned) value);
+                    ++shown;
+                }
             }
         }
         else if(! strcmp(c, "print"))

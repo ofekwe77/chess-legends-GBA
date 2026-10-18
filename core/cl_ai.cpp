@@ -321,6 +321,14 @@ Move Ai::_book_move(Game& game, const AiSettings& settings) const
     return Move();
 }
 
+namespace
+{
+    // Scratch for the controlled imperfection of the lower levels (external RAM on the console).
+    CL_EWRAM_BSS Move imperfection_moves[MAX_MOVES];
+    CL_EWRAM_BSS int imperfection_scores[MAX_MOVES];
+    CL_EWRAM_BSS int imperfection_candidates[MAX_MOVES];
+}
+
 AiDecision Ai::choose(Game& game, const AiSettings& settings, bool standard_start, PollFunction poll,
                       void* poll_user)
 {
@@ -370,8 +378,8 @@ AiDecision Ai::choose(Game& game, const AiSettings& settings, bool standard_star
 
         if(int((next_random(state) >> 8) % 100u) < profile.imperfection_percent)
         {
-            static Move moves[MAX_MOVES];
-            static int scores[MAX_MOVES];
+            Move* moves = imperfection_moves;
+            int* scores = imperfection_scores;
             SearchLimits quick = profile.limits;
             quick.max_quiescence_depth = 4;
             int count = _searcher.score_root_moves(game.position(), quick, profile.eval, moves, scores, MAX_MOVES);
@@ -385,7 +393,7 @@ AiDecision Ai::choose(Game& game, const AiSettings& settings, bool standard_star
                 }
             }
 
-            static int candidates[MAX_MOVES];
+            int* candidates = imperfection_candidates;
             int candidate_count = 0;
 
             for(int i = 0; i < count; ++i)

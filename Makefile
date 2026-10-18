@@ -21,7 +21,9 @@ DMGAUDIO    	:=
 DMGAUDIOBACKEND	:=  null
 ROMTITLE    	:=  CHESSLEGENDS
 ROMCODE     	:=  CLAW
-USERFLAGS   	:=  -DCL_GBA=1
+# Text is drawn with sprites: every text sprite owns a tiles item, and a full redraw briefly holds the old and
+# the new text, so the sprite tiles item pool is doubled (Butano default: 128).
+USERFLAGS   	:=  -DCL_GBA=1 -DBN_CFG_SPRITE_TILES_MAX_ITEMS=256
 USERCXXFLAGS	:=
 USERASFLAGS 	:=
 USERLDFLAGS 	:=

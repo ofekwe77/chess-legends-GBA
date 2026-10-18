@@ -190,18 +190,21 @@ void generate_arcane_checks(const Position& pos, MoveBuffer& list)
 
 void generate_legal(Position& pos, MoveList& list)
 {
-    MoveList pseudo;
-    generate_pseudo(pos, pseudo);
+    // Pseudo-legal actions are generated into the output list and filtered in place, so no second 1.3 KB list
+    // lives on the (small) console stack.
     list.clear();
-    list.overflow = pseudo.overflow;
+    generate_pseudo(pos, list);
+    int kept = 0;
 
-    for(int i = 0; i < pseudo.count; ++i)
+    for(int i = 0; i < list.count; ++i)
     {
-        if(leaves_king_safe(pos, pseudo.moves[i]))
+        if(leaves_king_safe(pos, list.moves[i]))
         {
-            list.add(pseudo.moves[i]);
+            list.moves[kept++] = list.moves[i];
         }
     }
+
+    list.count = kept;
 }
 
 bool is_legal(Position& pos, Move move)

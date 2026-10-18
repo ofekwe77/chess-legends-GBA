@@ -65,15 +65,25 @@ def pine(c, x, base, height, dark, light):
     c.vline(x, base, base + 3, dark)
 
 
+def margin_source(v, visible):
+    """Source coordinate for the hidden margin of a 256-pixel axis: just past the visible edge it mirrors the far
+    edge, just before 256 (shown when the layer moves the other way and wraps) it mirrors the near edge. Mirrors
+    are tile aligned, so they reuse flipped tiles instead of adding new ones."""
+    if v < visible:
+        return v
+    half = visible + (256 - visible) // 2
+    if v < half:
+        return visible - 1 - (v - visible)
+    return 255 - v
+
+
 def finalize(c):
+    # Screen shakes and camera pans move a backdrop a few pixels: the hidden margins continue the art seamlessly.
     big = Canvas(256, 256)
-    big.blit(c, 0, 0, transparent=-1)
-    # fill the unused area with the bottom-left color (never visible)
-    edge = c.get(0, H - 1)
     for y in range(256):
+        sy = margin_source(y, H)
         for x in range(256):
-            if x >= W or y >= H:
-                big.set(x, y, edge)
+            big.set(x, y, c.get(margin_source(x, W), sy))
     return big
 
 

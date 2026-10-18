@@ -12,6 +12,7 @@
 #   harness    build the headless mGBA test harness
 #   emu        run an emulator scenario: tools/cl.sh emu --script tests/emu/x.txt [...]
 #   emu-all    run every emulator scenario in tests/emu (fails if any fails)
+#   check      gate before a commit: host tests, quick validation, warning-free ROM, emulator scenarios
 #   verify     full release verification
 #   clean      remove build outputs
 set -e
@@ -106,6 +107,18 @@ cmd_emu_all() {
     [ "$failed" -eq 0 ]
 }
 
+cmd_check() {
+    # Gate before committing: stops at the first failure (set -e) with a non-zero exit code.
+    cmd_tests > build_host/check_tests.txt 2>&1 || { tail -20 build_host/check_tests.txt; return 1; }
+    tail -1 build_host/check_tests.txt
+    cmd_validate --quick > build_host/check_validate.txt 2>&1 || { grep -E "FAIL|problem" build_host/check_validate.txt; return 1; }
+    tail -2 build_host/check_validate.txt
+    make -j"$JOBS" > build_host/check_rom.txt 2>&1 || { grep -E "error" build_host/check_rom.txt | head; return 1; }
+    if grep -q -E "warning" build_host/check_rom.txt; then grep -E "warning" build_host/check_rom.txt; return 1; fi
+    echo "ROM builds without warnings"
+    cmd_emu_all
+}
+
 cmd_verify() {
     bash tools/verify_release.sh "$@"
 }
@@ -126,6 +139,7 @@ case "${1:-all}" in
     harness) cmd_harness ;;
     emu)     shift; cmd_emu "$@" ;;
     emu-all) cmd_emu_all ;;
+    check)   mkdir -p build_host; cmd_check ;;
     verify)  shift; cmd_verify "$@" ;;
     clean)   cmd_clean ;;
     *) echo "unknown command: $1" >&2; exit 2 ;;

@@ -5,6 +5,7 @@
 #include "cl_movegen.h"
 #include "cl_solver.h"
 #include "cl_text_layout.h"
+#include "cl_tutorial.h"
 #include "test_util.h"
 
 namespace

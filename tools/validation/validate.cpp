@@ -23,6 +23,7 @@
 #include "cl_progress.h"
 #include "cl_solver.h"
 #include "cl_text_layout.h"
+#include "cl_tutorial.h"
 
 namespace cl
 {
@@ -474,6 +475,94 @@ namespace
 
 namespace
 {
+    void validate_tutorial()
+    {
+        cl::Game game;
+
+        for(int i = 0; i < cl::lessons_count; ++i)
+        {
+            const cl::Lesson& l = cl::lesson(i);
+            char where[48];
+            std::snprintf(where, sizeof(where), "lesson %d %s", i + 1, l.title);
+            check_text(where, l.title, cl::FontId::BIG, cl::layout::title_text_width, 1);
+            check_text(where, l.title, cl::FontId::SMALL, cl::layout::list_text_width, 1);
+            check(l.pages[0] != nullptr, where, "no instruction page");
+
+            for(const char* page : l.pages)
+            {
+                if(page)
+                {
+                    check_text(where, page, cl::FontId::SMALL, cl::layout::card_text_width, 4);
+                }
+            }
+
+            check_text(where, l.task, cl::FontId::SMALL, cl::layout::panel_text_width, cl::layout::panel_lines);
+            check_text(where, l.success, cl::FontId::SMALL, 184, 4);
+            const bool ok = cl::setup_lesson(l, game);
+            check(ok, where, "position rejected");
+
+            if(! ok)
+            {
+                continue;
+            }
+
+            cl::Position pos = game.position();
+            check(! game.over() && pos.side == cl::WHITE, where, "the learner (White) is not to move");
+            cl::MoveList legal;
+            cl::generate_legal(pos, legal);
+            bool achievable = false;
+            const char* how = "";
+
+            switch(l.goal)
+            {
+            case cl::LessonGoal::SELECT_SQUARE:
+                achievable = pos.board[l.from] != cl::EMPTY && cl::color_of(pos.board[l.from]) == pos.side;
+                how = "own piece on the square";
+                break;
+
+            case cl::LessonGoal::MOVE:
+                for(int m = 0; m < legal.count; ++m)
+                {
+                    achievable |= legal.moves[m].from() == l.from && legal.moves[m].to() == l.to;
+                }
+                how = "legal action";
+                break;
+
+            case cl::LessonGoal::CAPTURE:
+                for(int m = 0; m < legal.count; ++m)
+                {
+                    const cl::Move move = legal.moves[m];
+                    achievable |= move.is_capture() && cl::type_of(pos.board[move.to()]) == cl::PieceType(l.value);
+                }
+                how = "legal capture";
+                break;
+
+            case cl::LessonGoal::CAST:
+                for(int m = 0; m < legal.count; ++m)
+                {
+                    achievable |= legal.moves[m].is_magic() && int(legal.moves[m].ability()) == l.value;
+                }
+                how = "legal cast";
+                break;
+
+            case cl::LessonGoal::REACH_MANA:
+                achievable = pos.rules.arcane && legal.count > 0 &&
+                             pos.mana[pos.side] + pos.rules.regeneration >= l.value;
+                how = "regeneration";
+                break;
+
+            default:
+                achievable = quick || prove(pos, l.objective, l.objective.limit, pos.rules.ability_mask[pos.side]) ==
+                                      PROOF_YES;
+                how = quick ? "objective (not proven: --quick)" : "objective PROVEN";
+                break;
+            }
+
+            check(achievable, where, "the lesson goal cannot be achieved");
+            std::printf("  %-2d %-20s %s\n", i + 1, l.title, how);
+        }
+    }
+
     void validate_gauntlet()
     {
         cl::Game game;
@@ -607,6 +696,8 @@ int main(int argc, char** argv)
         validate_encounter(i);
     }
 
+    std::printf("\nTutorial (%d lessons):\n", cl::lessons_count);
+    validate_tutorial();
     std::printf("\nBoss gauntlet (%d):\n", cl::gauntlet_stages);
     validate_gauntlet();
     std::printf("\nStory text, worlds and characters:\n");

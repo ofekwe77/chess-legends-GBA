@@ -44,18 +44,21 @@ private:
         SETTINGS,       // pause > settings
         HELP,           // help pages or a rule card
         CONFIRM,        // yes / no question
-        GAME_OVER
+        GAME_OVER,
+        LESSON          // tutorial: instruction pages before the task
     };
 
     enum class Confirm : uint8_t
     {
         RESIGN,
         QUIT,
-        OFFER_DRAW
+        OFFER_DRAW,
+        RESTART_LESSON
     };
 
     enum class InfoView : uint8_t
     {
+        TASK,           // tutorial: the lesson task
         PIECE,          // hovered / selected piece and its ability
         THREATS,        // who attacks the hovered square
         GAME            // material, captures, last move, objective
@@ -70,6 +73,8 @@ private:
         NEXT_CHALLENGE,
         CHALLENGE_LIST,
         GAUNTLET_NEXT,      // gauntlet: next stage / run summary
+        NEXT_LESSON,
+        LESSON_LIST
     };
 
     struct Animation
@@ -133,6 +138,9 @@ private:
     bool _threat_markers = false;
     bool _help_from_pause = false;
     bool _settings_changed = false;
+    bool _tutorial = false;             // a tutorial lesson is being played
+    bool _lesson_retry = false;         // the learner's action missed the task: reset after the animation
+    int _lesson_page = 0;
     bn::optional<SceneId> _next_scene;
     bn::string<48> _message;
     bn::string<16> _opponent_label;     // short opponent name in scenarios
@@ -149,6 +157,9 @@ private:
     void _record_result();
     void _suspend_and_quit();
     [[nodiscard]] SceneId _exit_scene() const;
+    void _lesson_check(const ActionInfo& info);
+    void _open_lesson();
+    void _update_lesson();
 
     // human input
     void _update_human();
@@ -190,6 +201,7 @@ private:
     void _open_game_over();
     void _update_game_over();
     void _draw_game_over();
+    void _draw_end_options();
     void _close_overlay();
     void _resume_from_pause();
     void _draw_menu(const char* title, const char* const* items, int count, int selected, int y = 40);
@@ -198,6 +210,7 @@ private:
     void _draw_panel_frame();
     void _refresh_panel();
     void _panel_piece(const Position& pos);
+    void _panel_task();
     void _panel_threats(const Position& pos);
     void _panel_game(const Position& pos);
     void _set_hint(const char* text);

@@ -16,6 +16,7 @@
 #include "cl_test_commands.h"
 #include "cl_text.h"
 #include "cl_text_layout.h"
+#include "cl_tutorial.h"
 
 #include "bn_sprite_items_ability_icons.h"
 
@@ -255,6 +256,28 @@ void MatchScene::_setup_mode()
         break;
     }
 
+    case MatchMode::TUTORIAL:
+    {
+        const Lesson& l = lesson(setup.lesson);
+        [[maybe_unused]] const bool ok = setup_lesson(l, _game);
+        CL_ASSERT(ok);
+        _scenario = l.goal == LessonGoal::OBJECTIVE;
+        setup.arcane = l.arcane;
+        setup.human_mask = 1;
+        setup.difficulty = l.defender;
+        setup.personality = Personality::BALANCED;
+        setup.node_scale = 100;
+        setup.opponent_faction = 0;
+
+        if(_scenario)
+        {
+            _tracker.start(l.objective, WHITE, _game.position());
+        }
+
+        fen_start = l.fen != nullptr;
+        break;
+    }
+
     default:
         if(! resume)
         {
@@ -264,6 +287,8 @@ void MatchScene::_setup_mode()
         setup.node_scale = 100;
         break;
     }
+
+    _tutorial = setup.mode == MatchMode::TUTORIAL;
 
     if(_g.profile.settings.high_contrast)
     {
@@ -305,7 +330,7 @@ void MatchScene::_start_match()
     _objective_success = false;
     _medal = 0;
     _last_move = Move();
-    _info = InfoView::PIECE;
+    _info = setup.mode == MatchMode::TUTORIAL ? InfoView::TASK : InfoView::PIECE;
 
     for(auto& side : _captured)
     {
@@ -342,6 +367,12 @@ void MatchScene::_start_match()
     _view.set_cursor(_human_to_move() && _game.position().side == BLACK ? 0x64 : 0x14);
     _view.commit();
     _begin_turn();
+
+    // A lesson opens with its instruction pages (not when it restarts after a missed task).
+    if(_tutorial && _lesson_page == 0)
+    {
+        _open_lesson();
+    }
 }
 
 bool MatchScene::_human_to_move() const
@@ -356,6 +387,7 @@ SceneId MatchScene::_exit_scene() const
     case MatchMode::STORY: return SceneId::STORY_MAP;
     case MatchMode::CHALLENGE: return SceneId::CHALLENGES;
     case MatchMode::GAUNTLET: return SceneId::GAUNTLET;
+    case MatchMode::TUTORIAL: return SceneId::TUTORIAL;
     default: return SceneId::MAIN_MENU;
     }
 }
@@ -370,6 +402,15 @@ const char* MatchScene::_idle_hint() const
 
 void MatchScene::_begin_turn()
 {
+    if(_tutorial && _lesson_retry && ! _game.over())
+    {
+        // The learner's action did not do what the lesson asked: back to the lesson position.
+        _lesson_retry = false;
+        _start_match();
+        _flash("Not quite. Try again.");
+        return;
+    }
+
     _selected = NO_SQUARE;
     _command_queen = NO_SQUARE;
     _command_ally = NO_SQUARE;
@@ -421,6 +462,11 @@ void MatchScene::_after_action(const ActionInfo& info)
     _recorder.on_action(info, _game);
     grant_achievements(_recorder.earned());
 
+    if(_tutorial)
+    {
+        _lesson_check(info);
+    }
+
     if(! _scenario)
     {
         return;
@@ -443,6 +489,115 @@ void MatchScene::_after_action(const ActionInfo& info)
     {
         _game.finish_objective(success, _player);
     }
+}
+
+void MatchScene::_lesson_check(const ActionInfo& info)
+{
+    const Lesson& l = lesson(_g.setup.lesson);
+
+    switch(l.goal)
+    {
+    case LessonGoal::MOVE:
+    case LessonGoal::CAPTURE:
+    case LessonGoal::CAST:
+        if(info.mover == _player && ! _game.over())
+        {
+            if(lesson_action_completes(l, info))
+            {
+                _game.finish_objective(true, _player);
+            }
+            else
+            {
+                _lesson_retry = true;
+            }
+        }
+        break;
+
+    case LessonGoal::REACH_MANA:
+        // Mana is regenerated at the start of the learner's turn, right after the computer's reply.
+        if(info.mover != _player && ! _game.over() && _game.position().mana[_player] >= l.value)
+        {
+            _game.finish_objective(true, _player);
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+void MatchScene::_open_lesson()
+{
+    _state_before_pause = _state;
+    _state = State::LESSON;
+    _lesson_page = 0;
+    _overlay_open = false;
+    _view.set_cursor_visible(false);
+}
+
+void MatchScene::_update_lesson()
+{
+    const Lesson& l = lesson(_g.setup.lesson);
+    int pages = 0;
+
+    while(pages < 3 && l.pages[pages])
+    {
+        ++pages;
+    }
+
+    bool redraw = ! _overlay_open;
+
+    if(bn::keypad::a_pressed())
+    {
+        if(++_lesson_page >= pages)
+        {
+            _close_overlay();
+            _state = _state_before_pause;
+            _view.set_cursor_visible(_state != State::AI);
+            return;
+        }
+
+        redraw = true;
+    }
+    else if(bn::keypad::b_pressed() || bn::keypad::start_pressed())
+    {
+        _lesson_page = pages;
+        _close_overlay();
+        _state = _state_before_pause;
+        _view.set_cursor_visible(_state != State::AI);
+        return;
+    }
+
+    if(! redraw)
+    {
+        return;
+    }
+
+    _overlay_text.clear();
+    _panel_text.clear();
+    _icons.clear();
+    _panel.window(1, 3, 28, 14);
+    bn::string<40> header;
+    bn::ostringstream header_stream(header);
+    header_stream << "LESSON " << (_g.setup.lesson + 1) << " OF " << lessons_count;
+    print(_overlay_text, 120, 32, header, TextColor::CYAN, Align::CENTER);
+    print_big(_overlay_text, 120, 44, l.title, TitleColor::GOLD, Align::CENTER);
+    const char* text = l.pages[_lesson_page];
+    TextSpan spans[4];
+    const int lines = wrap_lines(FontId::SMALL, text, bn::string_view(text).size(), layout::card_text_width, spans, 4);
+
+    for(int i = 0; i < lines; ++i)
+    {
+        print(_overlay_text, 120, 70 + i * 11, bn::string_view(text + spans[i].start, spans[i].length),
+              TextColor::WHITE, Align::CENTER);
+    }
+
+    bn::string<32> footer;
+    bn::ostringstream footer_stream(footer);
+    footer_stream << "◆ " << (_lesson_page + 1) << " / " << pages << "   " << (_lesson_page + 1 < pages ? "Ⓐ Next" :
+                                                                                                         "Ⓐ Start");
+    print(_overlay_text, 120, 118, footer, TextColor::GOLD, Align::CENTER);
+    _overlay_open = true;
 }
 
 void MatchScene::_record_result()
@@ -488,6 +643,13 @@ void MatchScene::_record_result()
             const Challenge& c = challenge(_g.setup.challenge);
             _medal = challenge_medal(c, _tracker.player_moves());
             record_challenge_medal(profile.progress, _g.setup.challenge, _medal);
+        }
+        break;
+
+    case MatchMode::TUTORIAL:
+        if(success)
+        {
+            profile.progress.tutorial_lessons |= uint16_t(1u << _g.setup.lesson);
         }
         break;
 
@@ -598,6 +760,10 @@ bn::optional<SceneId> MatchScene::update()
         _update_game_over();
         break;
 
+    case State::LESSON:
+        _update_lesson();
+        break;
+
     default:
         break;
     }
@@ -700,7 +866,13 @@ void MatchScene::_update_human()
 
     if(bn::keypad::r_pressed())
     {
-        _info = InfoView((int(_info) + 1) % 3);
+        _info = InfoView((int(_info) + 1) % 4);
+
+        if(_info == InfoView::TASK && ! _tutorial)
+        {
+            _info = InfoView::PIECE;
+        }
+
         _panel_dirty = true;
 
         if(_state == State::HUMAN)
@@ -814,6 +986,18 @@ void MatchScene::_update_human()
 
 void MatchScene::_select(int sq)
 {
+    if(_tutorial)
+    {
+        const Lesson& l = lesson(_g.setup.lesson);
+
+        if(l.goal == LessonGoal::SELECT_SQUARE && sq == l.from && ! _game.over())
+        {
+            _game.finish_objective(true, _player);
+            _begin_turn();
+            return;
+        }
+    }
+
     _threat_markers = false;
     _selected = sq;
     _command_queen = NO_SQUARE;
@@ -1434,10 +1618,20 @@ void MatchScene::_update_pause()
         labels[count++] = "SAVE & QUIT";
     }
 
-    items[count] = PAUSE_RESIGN;
-    labels[count++] = "RESIGN";
+    if(mode == MatchMode::TUTORIAL)
+    {
+        items[count] = PAUSE_RESIGN;
+        labels[count++] = "RESTART LESSON";
+    }
+    else
+    {
+        items[count] = PAUSE_RESIGN;
+        labels[count++] = "RESIGN";
+    }
+
     items[count] = PAUSE_QUIT;
-    labels[count++] = mode == MatchMode::STORY ? "QUIT TO MAP" : "QUIT";
+    labels[count++] = mode == MatchMode::STORY ? "QUIT TO MAP" : (mode == MatchMode::TUTORIAL ? "QUIT TO LESSONS" :
+                                                                                               "QUIT");
 
     if(_menu_index >= count)
     {
@@ -1494,6 +1688,14 @@ void MatchScene::_update_pause()
             return;
 
         case PAUSE_RESIGN:
+            if(_tutorial)
+            {
+                _close_overlay();
+                _lesson_page = 0;
+                _start_match();
+                return;
+            }
+
             _open_confirm(Confirm::RESIGN);
             return;
 
@@ -1987,6 +2189,20 @@ void MatchScene::_open_game_over()
         _end_options[_end_count++] = EndOption::GAUNTLET_NEXT;
         break;
 
+    case MatchMode::TUTORIAL:
+        if(_objective_success && _g.setup.lesson + 1 < lessons_count)
+        {
+            _end_options[_end_count++] = EndOption::NEXT_LESSON;
+        }
+
+        if(! _objective_success)
+        {
+            _end_options[_end_count++] = EndOption::RETRY;
+        }
+
+        _end_options[_end_count++] = EndOption::LESSON_LIST;
+        break;
+
     default:
         _end_options[_end_count++] = EndOption::REMATCH;
         _end_options[_end_count++] = EndOption::MAIN_MENU;
@@ -2021,7 +2237,19 @@ void MatchScene::_update_game_over()
         case EndOption::REMATCH:
         case EndOption::RETRY:
             _close_overlay();
+            _lesson_page = 0;
             _start_match();
+            return;
+
+        case EndOption::NEXT_LESSON:
+            _close_overlay();
+            _g.setup.lesson = int8_t(_g.setup.lesson + 1);
+            _lesson_page = 0;
+            _start_match();
+            return;
+
+        case EndOption::LESSON_LIST:
+            _next_scene = SceneId::TUTORIAL;
             return;
 
         case EndOption::NEXT_CHALLENGE:
@@ -2069,7 +2297,12 @@ void MatchScene::_draw_game_over()
     TitleColor color = TitleColor::GOLD;
     const bool scenario_goal = _scenario && _tracker.spec().type != Objective::WIN;
 
-    if(mode == MatchMode::CHALLENGE)
+    if(mode == MatchMode::TUTORIAL)
+    {
+        title = _objective_success ? "LESSON COMPLETE" : "TRY AGAIN";
+        color = _objective_success ? TitleColor::GOLD : TitleColor::RUBY;
+    }
+    else if(mode == MatchMode::CHALLENGE)
     {
         title = _objective_success ? "SOLVED!" : "NOT SOLVED";
         color = _objective_success ? TitleColor::GOLD : TitleColor::RUBY;
@@ -2104,6 +2337,24 @@ void MatchScene::_draw_game_over()
     }
 
     print_big(_overlay_text, 120, 34, title, color, Align::CENTER);
+
+    if(mode == MatchMode::TUTORIAL)
+    {
+        const Lesson& l = lesson(_g.setup.lesson);
+        const char* text = _objective_success ? l.success : l.task;
+        TextSpan spans[4];
+        const int lines = wrap_lines(FontId::SMALL, text, bn::string_view(text).size(), 184, spans, 4);
+
+        for(int i = 0; i < lines; ++i)
+        {
+            print(_overlay_text, 120, 54 + i * 10, bn::string_view(text + spans[i].start, spans[i].length),
+                  TextColor::WHITE, Align::CENTER);
+        }
+
+        _draw_end_options();
+        return;
+    }
+
     print(_overlay_text, 120, 56, result_reason_name(_game.reason()), TextColor::WHITE, Align::CENTER);
 
     bn::string<40> detail;
@@ -2143,6 +2394,11 @@ void MatchScene::_draw_game_over()
         print(_overlay_text, 120, 80, "Progress could not be saved!", TextColor::RED, Align::CENTER);
     }
 
+    _draw_end_options();
+}
+
+void MatchScene::_draw_end_options()
+{
     for(int i = 0; i < _end_count; ++i)
     {
         const char* label;
@@ -2150,6 +2406,8 @@ void MatchScene::_draw_game_over()
         switch(_end_options[i])
         {
         case EndOption::REMATCH: label = "REMATCH"; break;
+        case EndOption::NEXT_LESSON: label = "NEXT LESSON"; break;
+        case EndOption::LESSON_LIST: label = "LESSONS"; break;
         case EndOption::CONTINUE: label = "CONTINUE"; break;
         case EndOption::RETRY: label = "RETRY"; break;
         case EndOption::NEXT_CHALLENGE: label = "NEXT CHALLENGE"; break;
@@ -2289,9 +2547,31 @@ void MatchScene::_refresh_panel()
         _panel_game(pos);
         break;
 
+    case InfoView::TASK:
+        _panel_task();
+        break;
+
     default:
         _panel_piece(pos);
         break;
+    }
+}
+
+void MatchScene::_panel_task()
+{
+    const Lesson& l = lesson(_g.setup.lesson);
+    bn::string<24> header;
+    bn::ostringstream stream(header);
+    stream << "LESSON " << (_g.setup.lesson + 1);
+    print(_panel_text, panel_x, 52, header, TextColor::CYAN);
+    TextSpan spans[layout::panel_lines];
+    const int lines = wrap_lines(FontId::SMALL, l.task, bn::string_view(l.task).size(), layout::panel_text_width,
+                                 spans, layout::panel_lines);
+
+    for(int i = 0; i < lines; ++i)
+    {
+        print(_panel_text, panel_x, 62 + i * 9, bn::string_view(l.task + spans[i].start, spans[i].length),
+              TextColor::GOLD);
     }
 }
 

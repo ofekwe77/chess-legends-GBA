@@ -213,6 +213,43 @@ TEST_CASE("campaign", objective_rules)
     CHECK(restored.status(game) == tracker().status(game));
 }
 
+TEST_CASE("campaign", tutorial_lessons_and_goals)
+{
+    cl::Game& game = test_util::fresh_game();
+
+    for(int i = 0; i < cl::lessons_count; ++i)
+    {
+        const cl::Lesson& l = cl::lesson(i);
+        CHECK_MSG(cl::setup_lesson(l, game), l.title);
+        CHECK(! game.over());
+        CHECK(game.position().side == cl::WHITE);
+        CHECK(l.pages[0] && l.task && l.success);
+    }
+
+    // Action goals are recognised from the applied action only.
+    const cl::Lesson& knight = cl::lesson(1);
+    CHECK(cl::setup_lesson(knight, game));
+    cl::ActionInfo info;
+    CHECK(test_util::play(game, "g1f3", &info));
+    CHECK(cl::lesson_action_completes(knight, info));
+    CHECK(cl::setup_lesson(knight, game));
+    CHECK(test_util::play(game, "b1c3", &info));
+    CHECK(! cl::lesson_action_completes(knight, info));
+
+    const cl::Lesson& capture = cl::lesson(3);
+    CHECK(cl::setup_lesson(capture, game));
+    CHECK(test_util::play(game, "d3f5", &info));
+    CHECK(cl::lesson_action_completes(capture, info));
+
+    const cl::Lesson& spell = cl::lesson(6);
+    CHECK(cl::setup_lesson(spell, game));
+    CHECK(test_util::play(game, "ss:d2e2", &info));
+    CHECK(cl::lesson_action_completes(spell, info));
+    CHECK(cl::setup_lesson(spell, game));
+    CHECK(test_util::play(game, "d2d3", &info));
+    CHECK(! cl::lesson_action_completes(spell, info));
+}
+
 TEST_CASE("campaign", text_layout_wraps_like_the_screen)
 {
     cl::TextSpan lines[8];

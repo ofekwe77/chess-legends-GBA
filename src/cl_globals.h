@@ -62,6 +62,7 @@ struct MatchSetup
     int8_t encounter = -1;           // campaign encounter index
     int8_t challenge = -1;           // challenge index
     int8_t gauntlet_stage = -1;
+    int8_t lesson = -1;              // tutorial lesson index
     bool resume_suspended = false;   // the game and scenario state were restored from a suspended match
     bool last_success = false;       // outcome of the last finished scenario match (story / challenge / gauntlet)
     bool result_ready = false;       // last_success belongs to the match just left (false after quitting it)

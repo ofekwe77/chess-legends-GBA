@@ -39,6 +39,8 @@ namespace layout
     constexpr int help_key_width = 44;          // help page left column
     constexpr int help_text_width = 168;        // help page right column
     constexpr int help_lines = 3;               // lines per help entry
+    constexpr int panel_text_width = 84;        // match side panel (tutorial task)
+    constexpr int panel_lines = 5;
 }
 
 // Width in pixels of `length` bytes of UTF-8 text, or -1 if a character is missing from the font.

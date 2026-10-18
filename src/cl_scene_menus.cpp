@@ -565,6 +565,7 @@ bn::unique_ptr<Scene> create_scene(SceneId id)
     case SceneId::ACHIEVEMENTS: return make_achievements_scene();
     case SceneId::OPTIONS: return make_options_scene();
     case SceneId::CREDITS: return make_credits_scene();
+    case SceneId::TUTORIAL: return make_tutorial_scene();
     default: return make_main_menu_scene();
     }
 }

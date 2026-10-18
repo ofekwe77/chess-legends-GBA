@@ -1,0 +1,61 @@
+# Tutorial: lesson pages, a selection task, a move task, and a wrong move that resets the lesson.
+frames 60
+wait scene == 2 120
+cmd 11
+cmd 5 14
+wait scene == 14 200
+frames 20
+shot lesson_list
+expect menu_index == 0
+tap A
+wait scene == 5 200
+wait match_active == 1 100
+frames 20
+shot lesson1_page
+expect mode == 5
+expect ui_state == 13
+tap A
+frames 6
+tap A
+frames 10
+expect ui_state == 0
+shot lesson1_task
+# Lesson 1: cursor e2 -> g1, select the knight.
+tap RIGHT
+tap RIGHT
+tap DOWN
+tap A
+wait ui_state == 12 60
+frames 10
+shot lesson1_complete
+expect tutorial_step == 1
+# NEXT LESSON: knight g1-f3 (packed quiet move 0x06 -> 0x25 = 4742).
+tap A
+frames 20
+expect ui_state == 13
+tap A
+frames 6
+tap A
+frames 10
+cmd 3 4742
+wait ui_state == 12 120
+expect tutorial_step == 3
+tap A
+frames 20
+tap A
+frames 6
+tap A
+frames 10
+# Lesson 3 asks for e2-e4: play d2-d4 first (double push 0x13 -> 0x33 = 4200851); the lesson resets.
+cmd 3 4200851
+frames 40
+shot lesson3_retry
+expect plies == 0
+expect tutorial_step == 3
+expect ui_state == 0
+# Now e2-e4 (0x14 -> 0x34 = 4200980).
+cmd 3 4200980
+wait ui_state == 12 120
+expect tutorial_step == 7
+frames 6
+shot lesson3_complete

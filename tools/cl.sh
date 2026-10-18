@@ -11,6 +11,7 @@
 #   validate   build and run the content validator (all encounters and challenges)
 #   harness    build the headless mGBA test harness
 #   emu        run an emulator scenario: tools/cl.sh emu --script tests/emu/x.txt [...]
+#   emu-all    run every emulator scenario in tests/emu (fails if any fails)
 #   verify     full release verification
 #   clean      remove build outputs
 set -e
@@ -84,6 +85,27 @@ cmd_emu() {
     ./tools/harness/build/cl_harness.exe "$@"
 }
 
+cmd_emu_all() {
+    # Every emulator scenario in tests/emu; non-zero exit if any fails.
+    local failed=0 total=0
+    for script in tests/emu/*.txt; do
+        local name
+        name=$(basename "$script" .txt)
+        total=$((total + 1))
+        mkdir -p "build_emu/$name"
+        if ./tools/harness/build/cl_harness.exe --rom ChessLegends.gba --script "$script" --out "build_emu/$name" \
+                --quiet > "build_emu/$name/log.txt" 2>&1; then
+            echo "PASS $name"
+        else
+            echo "FAIL $name (see build_emu/$name/log.txt)"
+            tail -3 "build_emu/$name/log.txt"
+            failed=$((failed + 1))
+        fi
+    done
+    echo "emulator scenarios: $((total - failed)) / $total passed"
+    [ "$failed" -eq 0 ]
+}
+
 cmd_verify() {
     bash tools/verify_release.sh "$@"
 }
@@ -103,6 +125,7 @@ case "${1:-all}" in
     validate) shift; cmd_validate "$@" ;;
     harness) cmd_harness ;;
     emu)     shift; cmd_emu "$@" ;;
+    emu-all) cmd_emu_all ;;
     verify)  shift; cmd_verify "$@" ;;
     clean)   cmd_clean ;;
     *) echo "unknown command: $1" >&2; exit 2 ;;

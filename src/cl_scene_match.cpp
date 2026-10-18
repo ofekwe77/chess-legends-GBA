@@ -516,8 +516,8 @@ void MatchScene::_record_result()
 
 void MatchScene::_suspend_and_quit()
 {
+    // Every field is assigned below (no reset through a 2.6 KB temporary on the IWRAM stack).
     SuspendedMatch& s = _g.suspended;
-    s = SuspendedMatch();
     capture_game(_game, s);
     const MatchSetup& setup = _g.setup;
     s.mode = uint8_t(setup.mode);

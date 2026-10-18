@@ -18,6 +18,17 @@ namespace
         uint8_t bytes[save_layout::suspend_size];
     };
 
+    // Clears a record buffer in place (assigning a value-initialized temporary would build a 1-4 KB object on
+    // the small IWRAM stack).
+    template<typename Block>
+    void clear_block(Block& block)
+    {
+        for(uint8_t& byte : block.bytes)
+        {
+            byte = 0;
+        }
+    }
+
     // Record buffers live in EWRAM (the suspend block alone is 4 KB).
     BN_DATA_EWRAM_BSS ProfileBlock profile_block;
     BN_DATA_EWRAM_BSS ProfileBlock profile_check;
@@ -102,7 +113,7 @@ bool save_profile(const Profile& profile)
 {
     const int slot = profile_slot < 0 ? 0 : profile_slot ^ 1;
     const uint32_t sequence = profile_sequence + 1;
-    profile_block = ProfileBlock();
+    clear_block(profile_block);
     const int size = write_profile_record(profile, sequence, profile_block.bytes, save_layout::profile_size);
 
     if(size <= 0)
@@ -154,7 +165,7 @@ bool save_suspended_match(const SuspendedMatch& match)
     scan_suspend();
     const int slot = suspend_slot < 0 ? 0 : suspend_slot ^ 1;
     const uint32_t sequence = suspend_sequence + 1;
-    suspend_block = SuspendBlock();
+    clear_block(suspend_block);
     const int size = write_suspend_record(match, sequence, suspend_block.bytes, save_layout::suspend_size);
 
     if(size <= 0)

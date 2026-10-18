@@ -274,6 +274,7 @@ namespace
         w.u8(p.gauntlet_best);
         w.u8(uint32_t(p.gauntlet_cleared) | (uint32_t(p.intro_seen) << 1) | (uint32_t(p.ending_seen) << 2));
         w.u8(p.story_world);
+        w.u8(p.worlds_seen);
     }
 
     bool read_progress(ByteReader& r, SaveProgress& p)
@@ -295,9 +296,10 @@ namespace
         p.intro_seen = (flags >> 1) & 1;
         p.ending_seen = (flags >> 2) & 1;
         p.story_world = uint8_t(r.u8());
+        p.worlds_seen = uint8_t(r.u8());
 
         // Range validation: corrupted values never reach the game.
-        if(p.encounters_cleared >> encounters_count || p.gauntlet_best > 6 || p.story_world > 5 ||
+        if(p.encounters_cleared >> encounters_count || p.gauntlet_best > 6 || p.story_world > 5 || p.worlds_seen >> 6 ||
            p.music_unlocked >> music_tracks_count || p.tutorial_lessons >> tutorial_lessons_count || flags >> 3)
         {
             return false;

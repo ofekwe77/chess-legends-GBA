@@ -172,6 +172,25 @@ constexpr int campaign_encounters = 18;
 // Sets up the game for an encounter. Returns false if the data is invalid.
 bool setup_encounter(const Encounter& encounter, Game& game);
 
+// ------------------------------------------------------------------------------------------------ boss gauntlet
+
+// The six rulers in a row, each from an opening position that suits their style, with rising difficulty.
+struct GauntletStage
+{
+    Character boss;
+    const char* opening;            // opening name shown before the battle
+    const char* fen;                // nullptr: standard start position (White to move in every stage)
+    Difficulty difficulty;
+    Personality personality;
+    uint8_t node_scale;
+    const char* taunt;
+};
+
+constexpr int gauntlet_stages = 6;
+
+[[nodiscard]] const GauntletStage& gauntlet_stage(int index);
+bool setup_gauntlet_stage(const GauntletStage& stage, Game& game);
+
 // ------------------------------------------------------------------------------------------------ challenges
 
 struct Challenge

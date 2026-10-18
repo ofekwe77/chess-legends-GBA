@@ -52,6 +52,22 @@ TEST_CASE("campaign", every_encounter_sets_up)
     }
 }
 
+TEST_CASE("campaign", every_gauntlet_stage_sets_up)
+{
+    cl::Game& game = test_util::fresh_game();
+
+    for(int i = 0; i < cl::gauntlet_stages; ++i)
+    {
+        const cl::GauntletStage& stage = cl::gauntlet_stage(i);
+        CHECK(cl::setup_gauntlet_stage(stage, game));
+        CHECK(! game.over());
+        CHECK(game.position().side == cl::WHITE);
+        CHECK_EQ(int(game.position().mana[cl::WHITE]), 1);      // turn-start mana, as in a normal game
+        CHECK_EQ(int(game.position().mana[cl::BLACK]), 0);
+        CHECK(stage.boss == cl::world(i).boss);
+    }
+}
+
 TEST_CASE("campaign", standard_encounters_regenerate_like_a_normal_game)
 {
     cl::Game& game = test_util::fresh_game();

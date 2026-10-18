@@ -76,6 +76,7 @@ struct SaveProgress
     bool intro_seen = false;
     bool ending_seen = false;
     uint8_t story_world = 0;                // furthest unlocked world (0-5)
+    uint8_t worlds_seen = 0;                // bit per world whose introduction was shown (bit 0: prologue too)
 
     [[nodiscard]] bool operator==(const SaveProgress&) const = default;
 };

@@ -574,6 +574,32 @@ namespace
           { Objective::CHECKMATE_WITHIN, 4, 0 }, 3, SS, Difficulty::GRANDMASTER,
           "Three moves. One of them is a single sideways step.", "ss:g5f5" },
     };
+
+    constexpr GauntletStage gauntlet[gauntlet_stages] = {
+        { C::ROWAN, "French Defence, Advance",
+          "r1bqkbnr/pp3ppp/2n1p3/2ppP3/3P4/5N2/PPP2PPP/RNBQKB1R w KQkq - 2 5",
+          Difficulty::KNIGHT, Personality::POSITIONAL, 100, "The forest has grown since we last met." },
+        { C::VEYRA, "King's Gambit Accepted",
+          "rnbqkbnr/pppp1p1p/8/6p1/4Pp2/5N2/PPPP2PP/RNBQKB1R w KQkq - 0 4",
+          Difficulty::KNIGHT, Personality::AGGRESSIVE, 150, "Fire answers fire. Gambit accepted." },
+        { C::YSRA, "Semi-Slav Defence",
+          "rnbqkb1r/pp3ppp/2p1pn2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5",
+          Difficulty::SORCERER, Personality::DEFENSIVE, 80, "My walls are higher this winter." },
+        { C::NOCTIS, "Sicilian Defence, Dragon",
+          "rnbqkb1r/pp2pp1p/3p1np1/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6",
+          Difficulty::SORCERER, Personality::TRICKSTER, 100, "A dragon sleeps on page six. Mind its breath." },
+        { C::RAEL, "Two Knights Defence",
+          "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+          Difficulty::SORCERER, Personality::TACTICAL, 130, "The storm remembers you. It wants a rematch." },
+        { C::AURELIA, "The original board", nullptr,
+          Difficulty::GRANDMASTER, Personality::MASTER, 100, "Once more, from the very first move." },
+    };
+}
+
+const GauntletStage& gauntlet_stage(int index)
+{
+    CL_ASSERT(index >= 0 && index < gauntlet_stages);
+    return gauntlet[index];
 }
 
 const World& world(int index)

@@ -48,6 +48,7 @@ namespace
         p.progress.intro_seen = true;
         p.progress.ending_seen = true;
         p.progress.story_world = 5;
+        p.progress.worlds_seen = 0x3F;
         p.stats.games_played = 123;
         p.stats.games_won = 77;
         p.stats.spells[cl::ABILITY_ROYAL_ESCAPE] = 4;

@@ -17,8 +17,10 @@
 #include <vector>
 
 #include "cl_campaign.h"
+#include "cl_help.h"
 #include "cl_movegen.h"
 #include "cl_notation.h"
+#include "cl_progress.h"
 #include "cl_solver.h"
 #include "cl_text_layout.h"
 
@@ -470,6 +472,102 @@ namespace
     }
 }
 
+namespace
+{
+    void validate_gauntlet()
+    {
+        cl::Game game;
+
+        for(int i = 0; i < cl::gauntlet_stages; ++i)
+        {
+            const cl::GauntletStage& stage = cl::gauntlet_stage(i);
+            char where[48];
+            std::snprintf(where, sizeof(where), "gauntlet stage %d", i + 1);
+            check(stage.boss == cl::world(i).boss, where, "the stage is not the ruler of world %d", i + 1);
+            check(cl::setup_gauntlet_stage(stage, game), where, "opening rejected: %s", stage.fen ? stage.fen : "-");
+            check(! game.over() && game.position().side == cl::WHITE, where, "the player (White) is not to move");
+            check(game.position().validate(), where, "position fails validation");
+            check_text(where, stage.opening, cl::FontId::SMALL, cl::layout::screen_text_width, 1);
+            check_text(where, stage.taunt, cl::FontId::SMALL, cl::layout::dialogue_text_width,
+                       cl::layout::dialogue_lines);
+            check(i == 0 || int(stage.difficulty) >= int(cl::gauntlet_stage(i - 1).difficulty), where,
+                  "difficulty decreases");
+            std::printf("  %d %-12s %-26s %-12s %s %d%%\n", i + 1, cl::character_name(stage.boss), stage.opening,
+                        cl::difficulty_name(stage.difficulty), cl::personality_name(stage.personality),
+                        stage.node_scale);
+        }
+    }
+
+    void validate_ui_text()
+    {
+        for(int a = 0; a < cl::ABILITIES_COUNT; ++a)
+        {
+            check_text("rule card", cl::ability_rule_text(cl::Ability(a)), cl::FontId::SMALL,
+                       cl::layout::card_text_width, cl::layout::card_lines);
+            check_text("ability summary", cl::ability_summary(cl::Ability(a)), cl::FontId::SMALL,
+                       cl::layout::screen_text_width - 24, 1);
+        }
+
+        for(int p = 0; p < cl::help_pages_count; ++p)
+        {
+            const cl::HelpPage& page = cl::help_page(p);
+            check_text("help title", page.title, cl::FontId::BIG, cl::layout::title_text_width, 1);
+            int rows = 0;
+
+            for(int i = 0; i < page.count; ++i)
+            {
+                const cl::HelpLine& line = page.lines[i];
+                const bool keyed = line.key[0] != 0;
+
+                if(keyed)
+                {
+                    check_text("help key", line.key, cl::FontId::SMALL, cl::layout::help_key_width, 1);
+                }
+
+                const int width = keyed ? cl::layout::help_text_width :
+                                          cl::layout::help_key_width + cl::layout::help_text_width;
+                check_text("help text", line.text, cl::FontId::SMALL, width, cl::layout::help_lines);
+                cl::TextSpan spans[8];
+                rows += cl::wrap_lines(cl::FontId::SMALL, line.text, int(std::strlen(line.text)), width, spans, 8);
+            }
+
+            // The page body (from y = 36, 10 px rows, gaps between entries) must end above the hint line.
+            check(36 + rows * 10 + (page.count - 1) * 3 <= 144, page.title, "help page too long (%d rows)", rows);
+        }
+
+        for(int i = 0; i < cl::achievements_count; ++i)
+        {
+            const cl::AchievementInfo& info = cl::achievement_info(cl::Achievement(i));
+            check_text("achievement title", info.title, cl::FontId::SMALL, cl::layout::list_text_width, 1);
+            check_text("achievement description", info.description, cl::FontId::SMALL,
+                       cl::layout::screen_text_width - 24, 2);
+        }
+
+        for(int c = 0; c < cl::gallery_characters; ++c)
+        {
+            check_text("character lore", cl::character_lore(cl::Character(c)), cl::FontId::SMALL,
+                       cl::layout::card_text_width, cl::layout::card_lines);
+
+            if(c >= 2)
+            {
+                check_text("gallery hint", cl::gallery_unlock_hint(cl::GallerySection::CHARACTERS, c),
+                           cl::FontId::SMALL, cl::layout::card_text_width, 2);
+            }
+        }
+
+        for(int w = 0; w < cl::gallery_kingdoms; ++w)
+        {
+            check_text("kingdom lore", cl::kingdom_lore(w), cl::FontId::SMALL, cl::layout::card_text_width,
+                       cl::layout::card_lines);
+        }
+
+        for(int t = 0; t < cl::gallery_music; ++t)
+        {
+            check_text("music title", cl::music_title(t), cl::FontId::SMALL, cl::layout::list_text_width, 1);
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     for(int i = 1; i < argc; ++i)
@@ -495,8 +593,12 @@ int main(int argc, char** argv)
         validate_encounter(i);
     }
 
+    std::printf("\nBoss gauntlet (%d):\n", cl::gauntlet_stages);
+    validate_gauntlet();
     std::printf("\nStory text, worlds and characters:\n");
     validate_story_text();
+    std::printf("Help, achievements and gallery text:\n");
+    validate_ui_text();
     std::printf("\n%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

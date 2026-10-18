@@ -34,6 +34,11 @@ namespace layout
     constexpr int title_text_width = 228;       // big-font titles (world names, encounter titles)
     constexpr int name_tag_width = 104;         // speaker name tag (small font)
     constexpr int screen_text_width = 232;      // any full-width small-font line
+    constexpr int card_text_width = 208;        // rule card / gallery lore text (small font)
+    constexpr int card_lines = 6;
+    constexpr int help_key_width = 44;          // help page left column
+    constexpr int help_text_width = 168;        // help page right column
+    constexpr int help_lines = 3;               // lines per help entry
 }
 
 // Width in pixels of `length` bytes of UTF-8 text, or -1 if a character is missing from the font.

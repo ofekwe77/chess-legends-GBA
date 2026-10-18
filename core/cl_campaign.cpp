@@ -199,6 +199,20 @@ bool setup_encounter(const Encounter& encounter, Game& game)
     return game.setup(encounter.fen, rules, ! explicit_mana) == FenError::NONE;
 }
 
+bool setup_gauntlet_stage(const GauntletStage& stage, Game& game)
+{
+    const RuleSet rules = RuleSet::arcane_rules();
+
+    if(! stage.fen)
+    {
+        game.start(rules);
+        return true;
+    }
+
+    // Opening positions carry no mana: both sides start from zero and White receives its turn-start mana.
+    return game.setup(stage.fen, rules, true) == FenError::NONE;
+}
+
 bool setup_challenge(const Challenge& challenge, Game& game)
 {
     const RuleSet rules = challenge.arcane ? RuleSet::arcane_rules() : RuleSet::classic();

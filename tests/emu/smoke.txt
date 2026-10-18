@@ -1,7 +1,11 @@
 # Smoke test: boot, title, main menu, Arcane setup, start a match against the computer.
-frames 60
-shot title
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
 wait scene == 2 120
+frames 40
+shot title
 tap START
 wait scene == 3 120
 frames 20

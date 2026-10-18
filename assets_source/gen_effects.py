@@ -76,17 +76,92 @@ def map_marker():
     return sheet
 
 
+SIGILS = {
+    # 16x16 kingdom sigils (cinematics): leaf, flame, snowflake, rune, lightning, crown
+    'leaf': ['................', '...........333..', '.........33322..', '.......3332222..', '......332222222.',
+             '.....3322222222.', '....32222222221.', '...322222222211.', '...32222222211..', '..322222222211..',
+             '..32222222111...', '..3222221111....', '..2111111.......', '.11.............', '1...............',
+             '................'],
+    'flame': ['.......6........', '......66........', '......656.......', '.....6556.......', '.....65556..6...',
+              '....655556.66...', '....6555556556..', '...65554555556..', '...65544455556..', '..655444445556..',
+              '..654444444556..', '..654444444456..', '..554444444455..', '...5544444455...', '....55444455....',
+              '......5555......'],
+    'snow': ['.......8........', '....8..8..8.....', '.....8.8.8......', '..8...777...8...', '...8..787..8....',
+             '....8.777.8.....', '.888877777888888', '.....77877......', '....8.777.8.....', '...8..787..8....',
+             '..8...777...8...', '.....8.8.8......', '....8..8..8.....', '.......8........', '................',
+             '................'],
+    'rune': ['....99999999....', '...9aaaaaaaa9...', '..9a........a9..', '.9a....aa....a9.', '.9a...a99a...a9.',
+             '.9a..a9..9a..a9.', '.9a..a9..9a..a9.', '.9a...a99a...a9.', '.9a....aa....a9.', '.9a....aa....a9.',
+             '.9a...aaaa...a9.', '.9a..........a9.', '..9a........a9..', '...9aaaaaaaa9...', '....99999999....',
+             '................'],
+    'bolt': ['.........dd.....', '........ddb.....', '.......ddb......', '......ddb.......', '.....ddb........',
+             '....ddddddddd...', '...ddddddddb....', '.......ddb......', '......ddb.......', '.....ddb........',
+             '....ddb.........', '...ddb..........', '..ddb...........', '..db............', '.db.............',
+             '................'],
+    'crown': ['................', '................', '.d.....d.....d..', '.dd...ddd...dd..', '.ddd..ddd..ddd..',
+              '.dddddddddddddd.', '.dc4dcdfdcd9cdd.', '.dc4dcdfdcd9cdd.', '.dddddddddddddd.', '.cccccccccccccc.',
+              '..cccccccccccc..', '................', '................', '................', '................',
+              '................'],
+}
+SIGIL_ORDER = ['leaf', 'flame', 'snow', 'rune', 'bolt', 'crown']
+
+
+def sigils():
+    sheet = Canvas(16, 16 * len(SIGIL_ORDER))
+    for i, name in enumerate(SIGIL_ORDER):
+        for y, row in enumerate(SIGILS[name]):
+            for x, ch in enumerate(row):
+                if ch != '.':
+                    sheet.set(x, i * 16 + y, DIGITS[ch])
+        frame = sheet.crop(0, i * 16, 16, 16)
+        frame.outline(14)
+        sheet.blit(frame, 0, i * 16, transparent=-1)
+    return sheet
+
+
+def crown():
+    """64x32 golden crown with three gems (title, cinematics)."""
+    c = Canvas(64, 32)
+    gold_dark, gold, white = 12, 13, 8
+    # band
+    c.rect(6, 20, 52, 8, gold_dark)
+    c.hline(6, 57, 20, gold)
+    c.hline(6, 57, 27, gold_dark)
+    for x in range(8, 56, 6):
+        c.set(x, 24, white)
+    # five points
+    for i, (x, h) in enumerate(((8, 10), (20, 15), (32, 19), (44, 15), (56, 10))):
+        c.polygon([(x - 5, 20), (x, 20 - h), (x + 5, 20)], gold)
+        c.circle(x, 19 - h, 2, gold)
+        c.set(x, 19 - h, white)
+        c.line(x - 1, 19 - h + 3, x - 3, 19, gold_dark)
+    # gems on the band
+    for x, color in ((16, 4), (32, 15), (48, 9)):
+        c.ellipse(x, 24, 3, 2, color)
+        c.set(x - 1, 23, white)
+    c.outline(14)
+    return c
+
+
 def generate(root):
     graphics = os.path.join(root, 'graphics')
+    write_bmp(os.path.join(graphics, 'sigils.bmp'), sigils(), PARTICLE_PAL, bpp=4)
+    write_json(os.path.join(graphics, 'sigils.json'), {'type': 'sprite', 'height': 16})
+    write_bmp(os.path.join(graphics, 'crown.bmp'), crown(), PARTICLE_PAL, bpp=4)
+    write_json(os.path.join(graphics, 'crown.json'), {'type': 'sprite', 'height': 32})
     sheet = particles()
     write_bmp(os.path.join(graphics, 'particles.bmp'), sheet, PARTICLE_PAL, bpp=4)
     write_json(os.path.join(graphics, 'particles.json'), {'type': 'sprite', 'height': 8})
     marker = map_marker()
     write_bmp(os.path.join(graphics, 'map_marker.bmp'), marker, PARTICLE_PAL, bpp=4)
     write_json(os.path.join(graphics, 'map_marker.json'), {'type': 'sprite', 'height': 16})
-    preview = Canvas(8 * len(FRAMES) + 20, 16, fill=14)
+    preview = Canvas(8 * len(FRAMES) + 20 + 16 * 6 + 70, 36, fill=14)
     for i in range(len(FRAMES)):
         preview.blit(sheet.crop(0, i * 8, 8, 8), i * 8, 4)
+    sig = sigils()
+    for i in range(6):
+        preview.blit(sig.crop(0, i * 16, 16, 16), 8 * len(FRAMES) + 4 + i * 16, 2)
+    preview.blit(crown(), 8 * len(FRAMES) + 4 + 16 * 6 + 2, 2)
     write_png(os.path.join(root, 'assets_source', 'previews', 'particles.png'), preview, PARTICLE_PAL, scale=4,
               transparent_color=None)
 

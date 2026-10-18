@@ -1,5 +1,8 @@
 # Tutorial: lesson pages, a selection task, a move task, and a wrong move that resets the lesson.
-frames 60
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
 wait scene == 2 120
 cmd 11
 cmd 5 14

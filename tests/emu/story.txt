@@ -1,7 +1,11 @@
 # Story mode on a fresh save: prologue, first kingdom introduction, world map, encounter list, briefing, the first
 # lesson match, save-and-quit and resume from the main menu.
-frames 60
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
 wait scene == 2 120
+frames 30
 tap START
 wait scene == 3 120
 frames 20

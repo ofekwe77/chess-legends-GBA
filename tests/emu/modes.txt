@@ -1,6 +1,10 @@
 # Challenge mode and the boss gauntlet on a fresh save.
-frames 60
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
 wait scene == 2 120
+frames 30
 cmd 11
 tap START
 wait scene == 3 120

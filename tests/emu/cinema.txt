@@ -1,0 +1,43 @@
+# Opening and ending cinematics: every shot filmed, the intro marked as seen across a reboot, the ending
+# finishing on the credits.
+wait scene == 1 120
+expect cinematic == 100
+frames 110
+shot intro_board
+frames 150
+shot intro_sigils
+frames 70
+shot intro_crown
+frames 50
+shot intro_fragments
+frames 110
+shot intro_war_inferno
+frames 80
+shot intro_war_storm
+frames 80
+shot intro_war_umbral
+frames 90
+shot intro_hero
+frames 110
+shot intro_title
+wait scene == 2 200
+frames 30
+shot title
+# The intro played to the end: after a reboot the game opens on the title screen.
+reset
+wait scene == 2 200
+# The ending cinematic (test jump) then the credits.
+cmd 5 15
+wait scene == 15 200
+expect cinematic == 200
+frames 100
+shot ending_reunion
+frames 60
+shot ending_crown
+frames 120
+shot ending_board
+frames 150
+shot ending_kingdom
+frames 400
+shot ending_guardian
+wait scene == 13 400

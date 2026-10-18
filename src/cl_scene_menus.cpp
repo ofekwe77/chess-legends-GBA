@@ -4,12 +4,15 @@
 #include "bn_string.h"
 #include "bn_vector.h"
 
+#include "cl_art.h"
 #include "cl_layers.h"
 #include "cl_progress.h"
 #include "cl_scene_match.h"
 #include "cl_scenes.h"
 #include "cl_storage.h"
 #include "cl_text.h"
+
+#include "bn_sprite_items_crown.h"
 
 namespace cl::gba
 {
@@ -22,25 +25,28 @@ namespace
 class TitleScene final : public Scene
 {
 public:
-    TitleScene()
+    TitleScene() :
+        _backdrop(create_backdrop(Backdrop::TITLE)),
+        _crown(bn::sprite_items::crown.create_sprite(0, 26 - 80)),
+        _stars(ParticleKind::STARS, 14, 1, 31)
     {
         set_current_scene(SceneId::TITLE);
-        print_big(_text, 120, 40, "CHESS LEGENDS", TitleColor::GOLD, Align::CENTER);
-        print_big(_text, 120, 62, "ARCANE WARS", TitleColor::ARCANE, Align::CENTER);
+        _crown.set_bg_priority(0);
+        print_big(_text, 120, 66, "CHESS LEGENDS", TitleColor::GOLD, Align::CENTER);
+        print_big(_text, 120, 88, "ARCANE WARS", TitleColor::ARCANE, Align::CENTER);
 
         if(globals().load_notice)
         {
             globals().load_notice = false;
-            print(_text, 120, 96, "The save was damaged and has been repaired", TextColor::RED, Align::CENTER);
-            print(_text, 120, 106, "from its backup copy where possible.", TextColor::RED, Align::CENTER);
+            print(_text, 120, 136, "The save was damaged: it was repaired", TextColor::RED, Align::CENTER);
+            print(_text, 120, 146, "from its backup copy where possible.", TextColor::RED, Align::CENTER);
         }
-
-        print(_text, 120, 148, "An original Game Boy Advance chess fantasy", TextColor::GRAY, Align::CENTER);
     }
 
     [[nodiscard]] bn::optional<SceneId> update() override
     {
         ++_frames;
+        _stars.update();
 
         if((_frames & 31) == 0)
         {
@@ -48,7 +54,7 @@ public:
 
             if((_frames & 32) == 0)
             {
-                print(_press, 120, 124, "PRESS START", TextColor::WHITE, Align::CENTER);
+                print(_press, 120, 116, "PRESS START", TextColor::WHITE, Align::CENTER);
             }
         }
 
@@ -63,6 +69,9 @@ public:
     }
 
 private:
+    bn::regular_bg_ptr _backdrop;
+    bn::sprite_ptr _crown;
+    ParticleField _stars;
     bn::vector<bn::sprite_ptr, 40> _text;
     bn::vector<bn::sprite_ptr, 4> _press;
     ToastBanner _toast;
@@ -553,7 +562,8 @@ bn::unique_ptr<Scene> create_scene(SceneId id)
 {
     switch(id)
     {
-    case SceneId::INTRO: return make_title_scene();
+    case SceneId::INTRO: return make_intro_scene();
+    case SceneId::ENDING: return make_ending_scene();
     case SceneId::TITLE: return make_title_scene();
     case SceneId::MATCH_SETUP: return make_match_setup_scene();
     case SceneId::MATCH: return make_match_scene();

@@ -1,5 +1,8 @@
 # Gallery, achievements, statistics, options and credits.
-frames 60
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
 wait scene == 2 120
 cmd 11
 # Gallery on a fresh save: Arden is known, Rowan is a silhouette; kingdoms, music and spells sections.

@@ -2,8 +2,12 @@
 //
 // Usage: simulate [--games N] [--classic] [--white LEVEL] [--black LEVEL] [--personality-white P]
 //                 [--personality-black P] [--max-plies N] [--seed S] [--alternate] [--csv FILE] [--quiet]
-//                 [--profile]
+//                 [--profile] [--costs a,b,c,d,e,f] [--regen N] [--max-mana N] [--abilities-a MASK]
+//                 [--abilities-b MASK]
 //   LEVEL: 0 Apprentice, 1 Knight, 2 Sorcerer, 3 Grandmaster. P: 0..6 (see cl_ai.h).
+//   --costs: mana cost of each ability in order (Shadow Step, Phase Shift, Ghost Walk, Castle Swap, Royal Command,
+//   Royal Escape). --abilities-a / -b: ability masks of configuration A (the "white" options) and B; with
+//   --alternate they follow their configuration when colors swap (0 = no magic, 63 = all six).
 //   --profile: the console polls the search every 8 nodes and yields a frame from there; this reports the
 //   longest stretch of host time between two polls, and the slowest choose() and Game::apply() calls.
 //
@@ -40,7 +44,13 @@ namespace
         long long mana_samples = 0;
         long long mana_stored_sum = 0;
         long long material_gain_after_ability[cl::ABILITIES_COUNT] = {};
+        long long material_gain_samples[cl::ABILITIES_COUNT] = {};
         long long captures = 0;
+        int decisive_leads = 0;     // games where a side reached a lead of at least three pawns
+        int leads_converted = 0;
+        int leads_drawn = 0;
+        int leads_reversed = 0;
+        double search_seconds = 0;
         double seconds = 0;
     };
 
@@ -122,6 +132,11 @@ int main(int argc, char** argv)
     bool quiet = false;
     bool profile = false;
     const char* csv_path = nullptr;
+    int costs[cl::ABILITIES_COUNT] = { -1, -1, -1, -1, -1, -1 };
+    int regen = -1;
+    int max_mana = -1;
+    int abilities_a = cl::ABILITY_MASK_ALL;
+    int abilities_b = cl::ABILITY_MASK_ALL;
     Worst worst_choose;
     Worst worst_apply;
     Worst worst_gap;
@@ -144,6 +159,26 @@ int main(int argc, char** argv)
         else if(! std::strcmp(a, "--csv")) { csv_path = next; ++i; }
         else if(! std::strcmp(a, "--quiet")) { quiet = true; }
         else if(! std::strcmp(a, "--profile")) { profile = true; }
+        else if(! std::strcmp(a, "--regen")) { regen = parse_int(next, regen); ++i; }
+        else if(! std::strcmp(a, "--max-mana")) { max_mana = parse_int(next, max_mana); ++i; }
+        else if(! std::strcmp(a, "--abilities-a")) { abilities_a = parse_int(next, abilities_a) & 63; ++i; }
+        else if(! std::strcmp(a, "--abilities-b")) { abilities_b = parse_int(next, abilities_b) & 63; ++i; }
+        else if(! std::strcmp(a, "--costs"))
+        {
+            const char* text = next;
+
+            for(int k = 0; k < cl::ABILITIES_COUNT && *text; ++k)
+            {
+                costs[k] = int(std::strtol(text, const_cast<char**>(&text), 10));
+
+                if(*text == ',')
+                {
+                    ++text;
+                }
+            }
+
+            ++i;
+        }
         else
         {
             std::printf("unknown option %s\n", a);
@@ -166,8 +201,69 @@ int main(int argc, char** argv)
 
     for(int g = 0; g < games; ++g)
     {
-        game.start(arcane ? cl::RuleSet::arcane_rules() : cl::RuleSet::classic());
         bool swapped = alternate && (g & 1);
+        cl::RuleSet rules = arcane ? cl::RuleSet::arcane_rules() : cl::RuleSet::classic();
+
+        for(int k = 0; k < cl::ABILITIES_COUNT; ++k)
+        {
+            if(costs[k] >= 0)
+            {
+                rules.cost[k] = uint8_t(costs[k]);
+            }
+        }
+
+        if(regen >= 0)
+        {
+            rules.regeneration = uint8_t(regen);
+        }
+
+        if(max_mana >= 0)
+        {
+            rules.max_mana = uint8_t(max_mana);
+        }
+
+        rules.ability_mask[cl::WHITE] = uint8_t(swapped ? abilities_b : abilities_a);
+        rules.ability_mask[cl::BLACK] = uint8_t(swapped ? abilities_a : abilities_b);
+        game.start(rules);
+
+        // Ability-associated material change: the caster's material balance four plies after each cast.
+        struct PendingGain
+        {
+            int ability;
+            cl::Color side;
+            int balance_before;
+            int due_ply;
+        };
+
+        PendingGain pending[64];
+        int pending_count = 0;
+        const auto balance = [](const cl::Position& pos, cl::Color side)
+        {
+            return material(pos, side) - material(pos, cl::opposite(side));
+        };
+        const auto resolve_gains = [&](bool all)
+        {
+            int write = 0;
+
+            for(int k = 0; k < pending_count; ++k)
+            {
+                const PendingGain& p = pending[k];
+
+                if(all || game.plies_played() >= p.due_ply)
+                {
+                    totals.material_gain_after_ability[p.ability] += balance(game.position(), p.side) - p.balance_before;
+                    ++totals.material_gain_samples[p.ability];
+                }
+                else
+                {
+                    pending[write++] = p;
+                }
+            }
+
+            pending_count = write;
+        };
+        int leader = -1;    // first side to lead by three pawns or more over a full move
+        int previous_leader = -1;
         cl::AiSettings settings[2];
         settings[cl::WHITE].difficulty = cl::Difficulty(swapped ? black_level : white_level);
         settings[cl::WHITE].personality = cl::Personality(swapped ? black_personality : white_personality);
@@ -231,7 +327,9 @@ int main(int argc, char** argv)
             }
             else
             {
+                const Clock::time_point begin = Clock::now();
                 decision = ai.choose(game, settings[side], book_allowed);
+                totals.search_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
             }
 
             cl::Position before = game.position();
@@ -280,11 +378,30 @@ int main(int argc, char** argv)
                 game_mana += info.mana_spent;
                 ++game_abilities;
 
-                // Material balance change over the next four plies (ability-associated material gains).
-                int before_balance = material(before, side) - material(before, cl::opposite(side));
-                (void) before_balance;
+                if(pending_count < 64)
+                {
+                    pending[pending_count++] = PendingGain{ int(ability), side, balance(before, side),
+                                                            game.plies_played() + 3 };
+                }
+            }
+
+            resolve_gains(false);
+
+            // A decisive lead must survive the opponent's reply (not the moment between a capture and the recapture).
+            {
+                const int lead = balance(game.position(), cl::WHITE);
+                const int now = lead >= 300 ? int(cl::WHITE) : (lead <= -300 ? int(cl::BLACK) : -1);
+
+                if(leader < 0 && now >= 0 && now == previous_leader)
+                {
+                    leader = now;
+                }
+
+                previous_leader = now;
             }
         }
+
+        resolve_gains(true);
 
         bool capped = ! game.over();
         ++totals.games;
@@ -318,6 +435,25 @@ int main(int argc, char** argv)
         if(! capped)
         {
             ++totals.reasons[int(game.reason())];
+        }
+
+        if(leader >= 0)
+        {
+            ++totals.decisive_leads;
+            const cl::GameResult won = leader == int(cl::WHITE) ? cl::GameResult::WHITE_WINS : cl::GameResult::BLACK_WINS;
+
+            if(! capped && game.result() == won)
+            {
+                ++totals.leads_converted;
+            }
+            else if(capped || game.result() == cl::GameResult::DRAW)
+            {
+                ++totals.leads_drawn;
+            }
+            else
+            {
+                ++totals.leads_reversed;
+            }
         }
 
         if(! quiet)
@@ -373,8 +509,30 @@ int main(int argc, char** argv)
                     totals.ability_uses_by_color[0][a], totals.ability_uses_by_color[1][a]);
     }
 
-    std::printf("\nMana spent %lld; average stored mana at decision time %.2f\n", totals.mana_spent,
+    std::printf("\nMaterial balance change 4 plies after a cast (caster's view, centipawns):");
+
+    for(int a = 0; a < cl::ABILITIES_COUNT; ++a)
+    {
+        if(totals.material_gain_samples[a])
+        {
+            std::printf("  %s=%+.0f", cl::ability_short_name(cl::Ability(a)),
+                        double(totals.material_gain_after_ability[a]) / double(totals.material_gain_samples[a]));
+        }
+        else
+        {
+            std::printf("  %s=n/a", cl::ability_short_name(cl::Ability(a)));
+        }
+    }
+
+    std::printf("\nDecisive leads (3+ pawns): %d games; converted %d, drawn %d, reversed %d\n",
+                totals.decisive_leads, totals.leads_converted, totals.leads_drawn, totals.leads_reversed);
+    std::printf("Mana spent %lld; average stored mana at decision time %.2f\n", totals.mana_spent,
                 totals.mana_samples ? double(totals.mana_stored_sum) / totals.mana_samples : 0.0);
+
+    if(totals.search_seconds > 0)
+    {
+        std::printf("Host search speed %.0f nodes/s\n", double(totals.nodes) / totals.search_seconds);
+    }
     std::printf("Host time %.1fs\n", totals.seconds);
 
     if(profile)

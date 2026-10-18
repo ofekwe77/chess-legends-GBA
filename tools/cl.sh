@@ -7,6 +7,7 @@
 #   rom        build the ROM only
 #   tests      build and run the host-side test suite (optional filters: group or test names)
 #   sim        build and run the AI / balance simulator (tools/balance)
+#   balance    run the whole balance study (tools/balance/run_experiments.sh, logs in docs/balance_logs)
 #   analyze    build and run the puzzle candidate analyzer (tools/validation/analyze.cpp)
 #   validate   build and run the content validator (all encounters and challenges)
 #   harness    build the headless mGBA test harness
@@ -136,6 +137,7 @@ case "${1:-all}" in
     rom)     cmd_rom ;;
     tests)   shift; cmd_tests "$@" ;;
     sim)     shift; cmd_sim "$@" ;;
+    balance) shift; bash tools/balance/run_experiments.sh "$@" ;;
     analyze) shift; cmd_analyze "$@" ;;
     validate) shift; cmd_validate "$@" ;;
     harness) cmd_harness ;;

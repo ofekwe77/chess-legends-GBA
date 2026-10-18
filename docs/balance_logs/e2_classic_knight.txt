@@ -1,0 +1,14 @@
+# simulate --games 200 --white 1 --black 1 --alternate --classic
+
+=== Classic simulation: 200 games, white level 1 (p0) vs black level 1 (p0), colors alternated ===
+White wins 112  Black wins 74  Draws 14 (of which ply-capped 0)
+Config A wins 92  Config B wins 94
+Average length 108.7 plies; illegal move attempts 0; captures 4243
+Searches 20935 (book moves 0), nodes 23972202, avg nodes 1145, avg completed depth 2.32
+Terminal reasons:  CHECKMATE=186  FIVEFOLD REPETITION=7  DEAD POSITION=7
+Ability uses (white/black):  ss=0 (0/0)  ps=0 (0/0)  gw=0 (0/0)  cs=0 (0/0)  rc=0 (0/0)  re=0 (0/0)
+Material balance change 4 plies after a cast (caster's view, centipawns):  ss=n/a  ps=n/a  gw=n/a  cs=n/a  rc=n/a  re=n/a
+Decisive leads (3+ pawns): 174 games; converted 145, drawn 7, reversed 22
+Mana spent 0; average stored mana at decision time 0.00
+Host search speed 1764753 nodes/s
+Host time 13.6s

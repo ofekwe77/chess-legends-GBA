@@ -1,0 +1,14 @@
+# simulate --games 100 --white 1 --black 1 --alternate --personality-white 6
+
+=== Arcane simulation: 100 games, white level 1 (p6) vs black level 1 (p0), colors alternated ===
+White wins 58  Black wins 34  Draws 8 (of which ply-capped 0)
+Config A wins 51  Config B wins 41
+Average length 134.1 plies; illegal move attempts 0; captures 2422
+Searches 13014 (book moves 0), nodes 15474587, avg nodes 1189, avg completed depth 2.12
+Terminal reasons:  CHECKMATE=92  FIVEFOLD REPETITION=3  75-MOVE RULE=1  DEAD POSITION=4
+Ability uses (white/black):  ss=725 (363/362)  ps=325 (170/155)  gw=197 (109/88)  cs=13 (9/4)  rc=18 (10/8)  re=108 (53/55)
+Material balance change 4 plies after a cast (caster's view, centipawns):  ss=-45  ps=-3  gw=-38  cs=+8  rc=-64  re=-34
+Decisive leads (3+ pawns): 93 games; converted 72, drawn 4, reversed 17
+Mana spent 3698; average stored mana at decision time 5.51
+Host search speed 1655268 nodes/s
+Host time 9.4s

@@ -6,6 +6,7 @@
 #include "bn_vector.h"
 
 #include "cl_art.h"
+#include "cl_audio.h"
 #include "cl_layers.h"
 #include "cl_progress.h"
 #include "cl_scenes.h"
@@ -53,6 +54,7 @@ public:
         _preview(164, 40)
     {
         set_current_scene(SceneId::CHALLENGES);
+        play_music(Music::UMBRAL);
         Globals& g = globals();
         _index = g.setup.challenge >= 0 && g.setup.challenge < challenges_count ? g.setup.challenge : 0;
 
@@ -83,12 +85,14 @@ public:
 
         if(_input.up())
         {
+            play_sound(Sound::MENU_MOVE);
             _index = (_index + challenges_count - 1) % challenges_count;
             _scroll_to_index();
             _draw();
         }
         else if(_input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             _index = (_index + 1) % challenges_count;
             _scroll_to_index();
             _draw();
@@ -218,6 +222,7 @@ public:
         _g(globals())
     {
         set_current_scene(SceneId::GAUNTLET);
+        play_music(Music::BOSS);
         MatchSetup& setup = _g.setup;
 
         if(setup.gauntlet_stage < 0)

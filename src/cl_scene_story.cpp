@@ -13,6 +13,7 @@
 #include "bn_vector.h"
 
 #include "cl_art.h"
+#include "cl_audio.h"
 #include "cl_layers.h"
 #include "cl_progress.h"
 #include "cl_scenes.h"
@@ -88,6 +89,8 @@ public:
             return;
         }
 
+        play_music(Music::WORLD_MAP);
+
         for(int w = 0; w < worlds_count; ++w)
         {
             const int frame = world_restored(progress, w) ? 1 : (world_open(progress, w) ? 0 : 2);
@@ -156,12 +159,14 @@ private:
     {
         if(_input.left() || _input.up())
         {
+            play_sound(Sound::MENU_MOVE);
             _world = (_world + worlds_count - 1) % worlds_count;
             _place_cursor();
             _draw_info();
         }
         else if(_input.right() || _input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             _world = (_world + 1) % worlds_count;
             _place_cursor();
             _draw_info();
@@ -176,16 +181,19 @@ private:
         {
             if(world_open(globals().profile.progress, _world))
             {
+                play_sound(Sound::MENU_SELECT);
                 _open_list();
             }
             else
             {
+                play_sound(Sound::INVALID);
                 _message_frames = 120;
                 _draw_info();
             }
         }
         else if(bn::keypad::b_pressed())
         {
+            play_sound(Sound::MENU_CANCEL);
             return SceneId::MAIN_MENU;
         }
 
@@ -215,11 +223,13 @@ private:
     {
         if(_input.up())
         {
+            play_sound(Sound::MENU_MOVE);
             _row = (_row + 2) % 3;
             _draw_list();
         }
         else if(_input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             _row = (_row + 1) % 3;
             _draw_list();
         }
@@ -230,6 +240,7 @@ private:
 
             if(encounter_unlocked(globals().profile.progress, index))
             {
+                play_sound(Sound::MENU_SELECT);
                 Globals& g = globals();
                 g.story.step = StoryStep::BRIEFING;
                 g.story.world = int8_t(_world);
@@ -239,6 +250,7 @@ private:
         }
         else if(bn::keypad::b_pressed())
         {
+            play_sound(Sound::MENU_CANCEL);
             _list_open = false;
             _draw_info();
         }
@@ -363,6 +375,27 @@ public:
     {
         set_current_scene(SceneId::STORY_DIALOGUE);
         _build();
+
+        switch(_flow.step)
+        {
+        case StoryStep::PROLOGUE: play_music(Music::TITLE); break;
+        case StoryStep::EPILOGUE: play_music(Music::ENDING); break;
+        case StoryStep::BRIEFING:
+            play_music(encounter(_flow.encounter).type == EncounterType::BOSS ? Music::BOSS :
+                                                                               world_music(_flow.world));
+            break;
+        default:
+            if(_flow.step == StoryStep::VICTORY && _flow.encounter == campaign_encounters - 1)
+            {
+                play_music(Music::ENDING);
+            }
+            else
+            {
+                play_music(world_music(_flow.world));
+            }
+            break;
+        }
+
         _begin_step();
     }
 
@@ -598,6 +631,7 @@ private:
 
         case Segment::REWARD_CARD:
             _particles.emplace(ParticleKind::SPARKLES, 16, 0, 7);
+            play_sound(Sound::UNLOCK);
             _draw_reward();
             break;
 
@@ -741,6 +775,8 @@ private:
 
         if(bn::keypad::a_pressed())
         {
+            play_sound(Sound::CURSOR);
+
             if(++_line >= dialogue.count)
             {
                 _advance();
@@ -756,6 +792,7 @@ private:
     void _begin_boss_intro()
     {
         test_interface().cinematic = uint32_t(1 + _flow.world);
+        play_sound(Sound::BOSS_APPEAR);
         const Encounter& e = encounter(_flow.encounter);
         constexpr ParticleKind kinds[worlds_count] = { ParticleKind::LEAVES, ParticleKind::EMBERS, ParticleKind::SNOW,
                                                        ParticleKind::RUNES, ParticleKind::RAIN, ParticleKind::FRAGMENTS };

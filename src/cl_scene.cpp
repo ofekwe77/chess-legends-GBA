@@ -11,6 +11,7 @@
 #include "bn_sprites.h"
 #include "bn_string.h"
 
+#include "cl_audio.h"
 #include "cl_progress.h"
 #include "cl_text.h"
 
@@ -75,6 +76,7 @@ void frame_end()
     ti.anim_mode = g.profile.settings.animations;
     ti.volume_music = g.profile.settings.music_volume;
     ti.volume_sfx = g.profile.settings.sfx_volume;
+    audio_frame();
     bn::core::update();
 }
 
@@ -178,6 +180,7 @@ bool ToastBanner::update()
 
     _frames = toast_frames;
     _place(toast_rest_y - toast_slide * 2);
+    play_sound(Sound::ACHIEVEMENT);
     test_interface().toast = uint32_t(id + 1);
     return true;
 }

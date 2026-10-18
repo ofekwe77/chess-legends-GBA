@@ -8,6 +8,7 @@
 #include "bn_string.h"
 
 #include "cl_ai_runner.h"
+#include "cl_audio.h"
 #include "cl_help.h"
 #include "cl_notation.h"
 #include "cl_panel_tiles.h"
@@ -297,6 +298,21 @@ void MatchScene::_setup_mode()
 
     _player = (setup.human_mask & 1) ? WHITE : BLACK;
     _standard_start = ! fen_start;
+
+    switch(setup.mode)
+    {
+    case MatchMode::STORY:
+    {
+        const Encounter& e = encounter(setup.encounter);
+        play_music(e.type == EncounterType::BOSS ? Music::BOSS : world_music(e.world));
+        break;
+    }
+
+    case MatchMode::CHALLENGE: play_music(Music::UMBRAL); break;
+    case MatchMode::GAUNTLET: play_music(Music::BOSS); break;
+    case MatchMode::TUTORIAL: play_music(Music::VERDANT); break;
+    default: play_music(Music::BATTLE); break;
+    }
 }
 
 MatchContext MatchScene::_context() const
@@ -827,6 +843,7 @@ void MatchScene::_move_cursor()
 
     if(target != sq)
     {
+        play_sound(Sound::CURSOR);
         _view.set_cursor(target);
         _panel_dirty = true;
 
@@ -1004,6 +1021,7 @@ void MatchScene::_select(int sq)
     _command_ally = NO_SQUARE;
     _view.set_selected(sq);
     _state = State::SELECTED;
+    play_sound(Sound::PIECE_SELECT);
     _show_normal_targets();
 }
 
@@ -1275,6 +1293,32 @@ void MatchScene::_execute(Move move)
     test_interface().moves_applied += 1;
     test_interface().last_move = move.data();
     _last_move = move;
+
+    // Sound: the game result first, then check, then what the action was.
+    if(_game.over() && _game.reason() == ResultReason::CHECKMATE)
+    {
+        play_sound(Sound::CHECKMATE);
+    }
+    else if(_game.over() && _game.reason() == ResultReason::STALEMATE)
+    {
+        play_sound(Sound::STALEMATE);
+    }
+    else if(info.check)
+    {
+        play_sound(Sound::CHECK);
+    }
+    else if(move.is_magic())
+    {
+        play_sound(spell_sound(move.ability()));
+    }
+    else if(move.kind() == MK_PROMOTION)
+    {
+        play_sound(Sound::PROMOTION);
+    }
+    else
+    {
+        play_sound(info.captured != EMPTY ? Sound::CAPTURE : Sound::PIECE_MOVE);
+    }
 
     if(info.captured != EMPTY)
     {
@@ -1567,6 +1611,7 @@ namespace
 
 void MatchScene::_open_pause()
 {
+    play_sound(Sound::MENU_SELECT);
     if(_state != State::PAUSE && _state != State::SETTINGS && _state != State::HELP && _state != State::CONFIRM)
     {
         _state_before_pause = _state;
@@ -1642,16 +1687,23 @@ void MatchScene::_update_pause()
 
     if(_input.up())
     {
+        play_sound(Sound::MENU_MOVE);
         _menu_index = (_menu_index + count - 1) % count;
         redraw = true;
     }
     else if(_input.down())
     {
+        play_sound(Sound::MENU_MOVE);
         _menu_index = (_menu_index + 1) % count;
         redraw = true;
     }
 
     const PauseItem item = items[_menu_index];
+
+    if(bn::keypad::a_pressed())
+    {
+        play_sound(Sound::MENU_SELECT);
+    }
 
     if(bn::keypad::a_pressed())
     {
@@ -1787,10 +1839,12 @@ void MatchScene::_update_settings()
 
         case 2:
             settings.music_on = ! settings.music_on;
+            apply_audio_settings();
             break;
 
         case 3:
             settings.sfx_on = ! settings.sfx_on;
+            play_sound(Sound::MENU_SELECT);
             break;
 
         default:
@@ -2157,6 +2211,19 @@ void MatchScene::_update_handoff()
 void MatchScene::_open_game_over()
 {
     _record_result();
+
+    if(_g.setup.human_mask == 3)
+    {
+        play_music(_game.result() == GameResult::DRAW ? Music::DEFEAT : Music::VICTORY, false);
+    }
+    else if(_game.result() == GameResult::DRAW && ! _scenario)
+    {
+        stop_music();
+    }
+    else
+    {
+        play_music(_objective_success ? Music::VICTORY : Music::DEFEAT, false);
+    }
     _state = State::GAME_OVER;
     _menu_index = 0;
     _overlay_open = false;
@@ -2765,6 +2832,7 @@ void MatchScene::_set_hint(const char* text)
 
 void MatchScene::_flash(const char* text)
 {
+    play_sound(Sound::INVALID);
     _message = text;
     _message_frames = 120;
     _set_status();

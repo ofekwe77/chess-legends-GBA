@@ -5,6 +5,7 @@
 #include "bn_vector.h"
 
 #include "cl_art.h"
+#include "cl_audio.h"
 #include "cl_layers.h"
 #include "cl_progress.h"
 #include "cl_scene_match.h"
@@ -31,6 +32,7 @@ public:
         _stars(ParticleKind::STARS, 14, 1, 31)
     {
         set_current_scene(SceneId::TITLE);
+        play_music(Music::TITLE);
         _crown.set_bg_priority(0);
         print_big(_text, 120, 66, "CHESS LEGENDS", TitleColor::GOLD, Align::CENTER);
         print_big(_text, 120, 88, "ARCANE WARS", TitleColor::ARCANE, Align::CENTER);
@@ -62,6 +64,7 @@ public:
 
         if(_frames > 20 && (bn::keypad::start_pressed() || bn::keypad::a_pressed()))
         {
+            play_sound(Sound::MENU_SELECT);
             return SceneId::MAIN_MENU;
         }
 
@@ -133,6 +136,7 @@ public:
     MainMenuScene()
     {
         set_current_scene(SceneId::MAIN_MENU);
+        play_music(Music::TITLE);
         _has_suspended = has_suspended_match();
         test_interface().suspend_present = _has_suspended;
         _panel.window(1, 1, 28, 18);
@@ -156,6 +160,7 @@ public:
         }
         else if(_input.left() || _input.right())
         {
+            play_sound(Sound::MENU_MOVE);
             _column ^= 1;
             const int other = _column == 0 ? play_count : extra_count;
             _row = _row >= other ? other - 1 : _row;
@@ -175,12 +180,14 @@ public:
         {
             if(bn::optional<SceneId> next = _activate())
             {
+                play_sound(Sound::MENU_SELECT);
                 return next;
             }
         }
 
         if(bn::keypad::b_pressed())
         {
+            play_sound(Sound::MENU_CANCEL);
             return SceneId::TITLE;
         }
 
@@ -209,6 +216,7 @@ private:
 
     void _step(int delta)
     {
+        play_sound(Sound::MENU_MOVE);
         const int rows = _column == 0 ? play_count : extra_count;
 
         do
@@ -313,6 +321,7 @@ private:
 
     void _show_message(const char* message)
     {
+        play_sound(Sound::INVALID);
         _message = message;
         _message_frames = 150;
         _draw();
@@ -375,6 +384,7 @@ public:
     MatchSetupScene()
     {
         set_current_scene(SceneId::MATCH_SETUP);
+        play_music(Music::TITLE);
         _panel.window(3, 2, 24, 17);
         MatchSetup& setup = globals().setup;
         const SaveSettings& settings = globals().profile.settings;
@@ -396,16 +406,19 @@ public:
 
         if(_input.up())
         {
+            play_sound(Sound::MENU_MOVE);
             _row = (_row + rows - 1) % rows;
             _draw();
         }
         else if(_input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             _row = (_row + 1) % rows;
             _draw();
         }
         else if(_input.left() || _input.right())
         {
+            play_sound(Sound::MENU_MOVE);
             const int delta = _input.right() ? 1 : -1;
 
             switch(_row)
@@ -478,11 +491,13 @@ public:
             setup.gauntlet_stage = -1;
             setup.resume_suspended = false;
             save_profile_now();
+            play_sound(Sound::MENU_SELECT);
             return SceneId::MATCH;
         }
 
         if(bn::keypad::b_pressed())
         {
+            play_sound(Sound::MENU_CANCEL);
             return SceneId::MAIN_MENU;
         }
 

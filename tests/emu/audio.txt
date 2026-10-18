@@ -1,0 +1,52 @@
+# Audio: music plays (measured level), follows the scene, obeys the options, and actions make sounds.
+wait scene == 1 120
+frames 30
+audio_begin
+frames 180
+audio_check title_music 1000 20000
+expect music_id == 0
+expect music_playing == 1
+frames 20
+tap START
+wait scene == 2 120
+cmd 11
+# Story map: the world map theme.
+cmd 5 6
+wait scene == 7 200
+frames 20
+tap B
+frames 20
+tap B
+wait scene == 6 300
+frames 20
+expect music_id == 1
+# Options: music off silences the game, on brings the theme back.
+cmd 5 12
+wait scene == 12 200
+frames 20
+expect music_id == 0
+tap DOWN
+tap DOWN
+tap A
+frames 10
+expect music_playing == 0
+audio_begin
+frames 60
+audio_check music_off 0 150
+tap A
+frames 10
+expect music_playing == 1
+audio_begin
+frames 60
+audio_check music_back 1000 20000
+# A quick Arcane match: the battle theme; a move makes the piece sound, a capture another.
+cmd 2 1 1 1 0
+wait scene == 5 200
+wait match_active == 1 100
+frames 20
+expect music_id == 8
+snap sfx_count
+cmd 3 4200980
+frames 4
+delta sfx_count >= 1
+expect last_sfx == 5

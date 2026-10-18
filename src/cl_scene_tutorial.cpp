@@ -6,6 +6,7 @@
 #include "bn_vector.h"
 
 #include "cl_art.h"
+#include "cl_audio.h"
 #include "cl_layers.h"
 #include "cl_scenes.h"
 #include "cl_text.h"
@@ -24,6 +25,7 @@ public:
         _backdrop(create_backdrop(Backdrop::VERDANT))
     {
         set_current_scene(SceneId::TUTORIAL);
+        play_music(Music::VERDANT);
         const Globals& g = globals();
         const uint16_t done = g.profile.progress.tutorial_lessons;
 
@@ -55,11 +57,13 @@ public:
 
         if(_input.up())
         {
+            play_sound(Sound::MENU_MOVE);
             _index = (_index + lessons_count - 1) % lessons_count;
             _draw();
         }
         else if(_input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             _index = (_index + 1) % lessons_count;
             _draw();
         }

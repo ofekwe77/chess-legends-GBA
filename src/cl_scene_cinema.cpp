@@ -15,6 +15,7 @@
 #include "bn_vector.h"
 
 #include "cl_art.h"
+#include "cl_audio.h"
 #include "cl_board_tiles.h"
 #include "cl_layers.h"
 #include "cl_scenes.h"
@@ -134,6 +135,7 @@ public:
     IntroScene()
     {
         set_current_scene(SceneId::INTRO);
+        play_music(Music::TITLE);
         test_interface().cinematic = 100;
         fades(bn::color(0, 0, 0), 1);
     }
@@ -430,6 +432,7 @@ public:
     EndingScene()
     {
         set_current_scene(SceneId::ENDING);
+        play_music(Music::ENDING);
         test_interface().cinematic = 200;
         Globals& g = globals();
 

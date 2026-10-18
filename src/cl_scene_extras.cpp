@@ -10,6 +10,7 @@
 #include "bn_vector.h"
 
 #include "cl_art.h"
+#include "cl_audio.h"
 #include "cl_help.h"
 #include "cl_layers.h"
 #include "cl_notation.h"
@@ -58,6 +59,7 @@ public:
         _backdrop(create_backdrop(Backdrop::TITLE))
     {
         set_current_scene(SceneId::ACHIEVEMENTS);
+        play_music(Music::TITLE);
         _panel.window(0, 0, 30, 20);
         _draw();
     }
@@ -263,6 +265,7 @@ public:
         _backdrop(create_backdrop(Backdrop::TITLE))
     {
         set_current_scene(SceneId::OPTIONS);
+        play_music(Music::TITLE);
         _panel.window(0, 0, 30, 20);
         _draw();
     }
@@ -279,11 +282,13 @@ public:
 
         if(_input.up())
         {
+            play_sound(Sound::MENU_MOVE);
             _row = (_row + rows - 1) % rows;
             _draw();
         }
         else if(_input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             _row = (_row + 1) % rows;
             _draw();
         }
@@ -355,18 +360,22 @@ private:
         {
         case MUSIC_VOLUME:
             s.music_volume = uint8_t(bn::max(0, bn::min(10, s.music_volume + delta)));
+            apply_audio_settings();
             break;
 
         case SOUND_VOLUME:
             s.sfx_volume = uint8_t(bn::max(0, bn::min(10, s.sfx_volume + delta)));
+            play_sound(Sound::MENU_SELECT);
             break;
 
         case MUSIC:
             s.music_on = ! s.music_on;
+            apply_audio_settings();
             break;
 
         case SOUND:
             s.sfx_on = ! s.sfx_on;
+            play_sound(Sound::MENU_SELECT);
             break;
 
         case ANIMATIONS:
@@ -540,6 +549,7 @@ public:
         _stars(ParticleKind::STARS, 14, 2, 11)
     {
         set_current_scene(SceneId::CREDITS);
+        play_music(Music::ENDING);
         _panel.window(3, 0, 24, 20);
         _lines = credits_lines(_count);
         _total_height = _count * 14 + 160;
@@ -612,6 +622,7 @@ public:
     GalleryScene()
     {
         set_current_scene(SceneId::GALLERY);
+        play_music(Music::TITLE);
         _open_section();
     }
 
@@ -628,6 +639,7 @@ public:
 
         if(bn::keypad::r_pressed() || bn::keypad::l_pressed())
         {
+            play_sound(Sound::MENU_MOVE);
             const int delta = bn::keypad::r_pressed() ? 1 : -1;
             _section = GallerySection((int(_section) + 4 + delta) % 4);
             _index = 0;
@@ -635,10 +647,15 @@ public:
         }
         else if(_input.left() || _input.up() || _input.right() || _input.down())
         {
+            play_sound(Sound::MENU_MOVE);
             const int size = gallery_section_size(_section);
             const int delta = (_input.left() || _input.up()) ? -1 : 1;
             _index = (_index + size + delta) % size;
             _open_section();
+        }
+        else if(bn::keypad::a_pressed() && _section == GallerySection::MUSIC && _unlocked)
+        {
+            play_music(Music(_index));
         }
         else if(bn::keypad::a_pressed() && _section == GallerySection::CHARACTERS && _unlocked)
         {
@@ -788,10 +805,8 @@ private:
                 }
             }
 
-            if(! _unlocked)
-            {
-                print(_text, 120, 148, gallery_unlock_hint(_section, _index), TextColor::GRAY, Align::CENTER);
-            }
+            print(_text, 120, 148, _unlocked ? "Ⓐ Play this track" : gallery_unlock_hint(_section, _index),
+                  _unlocked ? TextColor::GOLD : TextColor::GRAY, Align::CENTER);
             break;
 
         default:

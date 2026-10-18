@@ -41,6 +41,10 @@ int main()
         {
             fade_out(10);
             scene.reset();
+
+            // One (black) frame lets the graphics managers free what the old scene released before the new
+            // scene allocates its own.
+            frame_end();
             current = *next;
             scene = create_scene(current);
             frame_end();

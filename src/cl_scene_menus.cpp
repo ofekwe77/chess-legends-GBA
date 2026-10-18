@@ -561,6 +561,10 @@ bn::unique_ptr<Scene> create_scene(SceneId id)
     case SceneId::STORY_DIALOGUE: return make_story_dialogue_scene();
     case SceneId::CHALLENGES: return make_challenges_scene();
     case SceneId::GAUNTLET: return make_gauntlet_scene();
+    case SceneId::GALLERY: return make_gallery_scene();
+    case SceneId::ACHIEVEMENTS: return make_achievements_scene();
+    case SceneId::OPTIONS: return make_options_scene();
+    case SceneId::CREDITS: return make_credits_scene();
     default: return make_main_menu_scene();
     }
 }

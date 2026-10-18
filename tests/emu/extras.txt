@@ -1,0 +1,90 @@
+# Gallery, achievements, statistics, options and credits.
+frames 60
+wait scene == 2 120
+cmd 11
+# Gallery on a fresh save: Arden is known, Rowan is a silhouette; kingdoms, music and spells sections.
+cmd 5 10
+wait scene == 10 200
+frames 20
+shot gallery_arden
+expect gallery_unlocked == 3
+tap RIGHT
+tap RIGHT
+frames 10
+shot gallery_rowan_locked
+tap R
+frames 10
+shot gallery_kingdom
+tap R
+frames 10
+shot gallery_music
+tap R
+frames 10
+shot gallery_spell_locked
+# Unlock everything (test command) and look again (re-entering the same scene: wait for the fades).
+cmd 7
+cmd 5 10
+frames 40
+tap RIGHT
+tap RIGHT
+frames 10
+shot gallery_rowan
+expect gallery_unlocked == 39
+tap A
+frames 6
+shot gallery_rowan_intense
+tap L
+frames 10
+shot gallery_spell_demo
+frames 95
+shot gallery_spell_demo_after
+tap L
+frames 10
+shot gallery_music_unlocked
+# Achievements and statistics.
+cmd 5 11
+wait scene == 11 200
+frames 20
+shot achievements
+tap DOWN
+tap DOWN
+frames 6
+shot achievements_scrolled
+tap R
+frames 10
+shot statistics
+# Options: text speed NORMAL -> FAST, then open and cancel the erase question.
+cmd 5 12
+wait scene == 12 200
+frames 20
+shot options
+expect text_speed == 1
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap RIGHT
+frames 4
+expect text_speed == 2
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+frames 6
+shot erase_confirm
+tap B
+frames 6
+snap campaign_cleared
+tap B
+wait scene == 3 200
+same campaign_cleared
+# Credits roll.
+cmd 5 13
+wait scene == 13 200
+frames 200
+shot credits
+tap B
+wait scene == 3 200

@@ -62,6 +62,59 @@ namespace
     };
 }
 
+namespace
+{
+    constexpr SpellDemo demos[ABILITIES_COUNT] = {
+        { "4k3/8/8/8/8/8/3P4/4K3 w - - 0 1 mana=2/0", "ss:d2c2" },
+        { "4k3/8/8/8/3N4/8/8/4K3 w - - 0 1 mana=3/0", "ps:d4e5" },
+        { "4k3/8/8/8/8/2P5/1B6/4K3 w - - 0 1 mana=3/0", "gw:b2d4" },
+        { "4k3/8/8/8/8/8/8/R1N1K3 w - - 0 1 mana=4/0", "cs:a1c1" },
+        { "4k3/8/8/8/8/3QP3/8/4K3 w - - 0 1 mana=5/0", "rc:e3e4@d3" },
+        { "6k1/5ppp/8/8/8/8/5PPP/4r1K1 w - - 0 1 mana=5/0", "re:g1g3" },
+    };
+
+    constexpr const char* credits[] = {
+        "#CHESS LEGENDS",
+        "#ARCANE WARS",
+        "",
+        "#Design, programming, pixel art,",
+        "#music and sound",
+        "Created with Claude,",
+        "an AI model by Anthropic,",
+        "following the Chess Legends",
+        "master specification.",
+        "",
+        "#Engine",
+        "Original chess and Arcane rules,",
+        "search AI and puzzle solvers.",
+        "",
+        "#Tools and libraries",
+        "Butano by Gustavo Valiente",
+        "(zlib license)",
+        "devkitARM by devkitPro",
+        "maxmod by Mukunda Johnson",
+        "mGBA by Vicki Pfau (testing)",
+        "",
+        "Every image and every note",
+        "in this game was generated",
+        "by original code.",
+        "",
+        "#Thank you for playing",
+    };
+}
+
+const SpellDemo& spell_demo(Ability ability)
+{
+    CL_ASSERT(int(ability) < ABILITIES_COUNT);
+    return demos[int(ability)];
+}
+
+const char* const* credits_lines(int& count)
+{
+    count = int(sizeof(credits) / sizeof(credits[0]));
+    return credits;
+}
+
 const char* ability_rule_text(Ability ability)
 {
     CL_ASSERT(int(ability) < ABILITIES_COUNT);

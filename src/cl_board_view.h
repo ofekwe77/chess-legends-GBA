@@ -43,6 +43,9 @@ public:
 
     void set_flipped(bool flipped);
 
+    // File and rank labels on the frame (accessibility option).
+    void set_coordinates_visible(bool visible);
+
     // Dark-side army palette: 0 = obsidian default, 1-6 = kingdom factions.
     void set_dark_faction(int faction);
 
@@ -111,6 +114,7 @@ private:
     int _check = NO_SQUARE;
     int _cursor_sq = 0x14;
     bool _flipped = false;
+    bool _coordinates = true;
     bool _squares_dirty = true;
 
     void _draw_frame();

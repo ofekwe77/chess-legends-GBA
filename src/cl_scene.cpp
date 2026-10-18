@@ -8,6 +8,7 @@
 #include "bn_keypad.h"
 #include "bn_memory.h"
 #include "bn_sprite_palettes.h"
+#include "bn_sprites.h"
 #include "bn_string.h"
 
 #include "cl_progress.h"
@@ -22,6 +23,7 @@ namespace
 {
     SceneId current_scene = SceneId::BOOT;
     int cpu_max_percent = 0;
+    int sprites_max = 0;
 }
 
 void set_current_scene(SceneId id)
@@ -32,6 +34,7 @@ void set_current_scene(SceneId id)
 void reset_cpu_statistics()
 {
     cpu_max_percent = 0;
+    sprites_max = 0;
 }
 
 void frame_end()
@@ -55,6 +58,10 @@ void frame_end()
 
     ti.cpu_max = uint32_t(cpu_max_percent);
     ti.ewram_free = uint32_t(bn::memory::available_alloc_ewram());
+    const int sprites = bn::sprites::used_items_count();
+    sprites_max = sprites > sprites_max ? sprites : sprites_max;
+    ti.sprites = uint32_t(sprites);
+    ti.sprites_max = uint32_t(sprites_max);
 
     // Profile facts, whatever the scene.
     const SaveProgress& progress = g.profile.progress;

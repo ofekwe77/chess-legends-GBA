@@ -565,6 +565,20 @@ namespace
         {
             check_text("music title", cl::music_title(t), cl::FontId::SMALL, cl::layout::list_text_width, 1);
         }
+
+        int credits_count = 0;
+        const char* const* credits = cl::credits_lines(credits_count);
+
+        for(int i = 0; i < credits_count; ++i)
+        {
+            const char* line = credits[i][0] == '#' ? credits[i] + 1 : credits[i];
+
+            if(line[0])
+            {
+                // The roll is drawn inside a 192 px wide panel.
+                check_text("credits", line, cl::FontId::SMALL, 184, 1);
+            }
+        }
     }
 }
 

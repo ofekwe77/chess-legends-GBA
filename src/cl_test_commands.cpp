@@ -32,6 +32,13 @@ namespace
         progress.tutorial_lessons = uint16_t((1u << tutorial_lessons_count) - 1);
         progress.intro_seen = true;
         progress.ending_seen = true;
+
+        // Every spell counts as cast once (gallery demonstrations).
+        for(uint32_t& count : profile.stats.spells)
+        {
+            count = count ? count : 1;
+        }
+
         save_profile_now();
     }
 }

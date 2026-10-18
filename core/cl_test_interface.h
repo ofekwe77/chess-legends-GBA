@@ -28,7 +28,7 @@
     X(error_count) X(stack_free) X(ewram_free) X(fps_drops) X(battle_scenes) X(cinematic) X(unlocked_worlds) \
     X(challenge_medals) X(text_speed) X(anim_mode) X(volume_music) X(volume_sfx) X(gauntlet_stage) \
     X(tutorial_step) X(gallery_unlocked) X(promotion_menu) X(pause_menu) X(load_status) X(toast) \
-    X(moves_left) X(story_step) X(suspend_present) X(objective_status) X(challenge)
+    X(moves_left) X(story_step) X(suspend_present) X(objective_status) X(challenge) X(sprites) X(sprites_max)
 
 #define CL_TI_DECLARE(name) uint32_t name;
 

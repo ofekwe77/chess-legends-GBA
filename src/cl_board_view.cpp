@@ -188,6 +188,11 @@ void BoardView::_draw_frame()
     _board.set(0, 18, frame_corner, false, true);
     _board.set(17, 18, frame_corner, true, true);
 
+    if(! _coordinates)
+    {
+        return;
+    }
+
     for(int column = 0; column < 8; ++column)
     {
         int f = _flipped ? 7 - column : column;
@@ -200,6 +205,16 @@ void BoardView::_draw_frame()
         int r = _flipped ? row : 7 - row;
         _board.set(0, 2 + row * 2, rank_1 + r * 2);
         _board.set(0, 3 + row * 2, rank_1 + r * 2 + 1);
+    }
+}
+
+void BoardView::set_coordinates_visible(bool visible)
+{
+    if(visible != _coordinates)
+    {
+        _coordinates = visible;
+        _draw_frame();
+        _board.commit();
     }
 }
 

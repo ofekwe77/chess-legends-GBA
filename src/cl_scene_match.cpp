@@ -333,6 +333,7 @@ void MatchScene::_start_match()
 
     _view.set_theme(setup.board_theme);
     _view.set_flipped(setup.human_mask == 2);
+    _view.set_coordinates_visible(_g.profile.settings.show_coordinates);
     _view.set_dark_faction(setup.opponent_faction);
     _view.set_last_move(NO_SQUARE, NO_SQUARE);
     _view.rebuild_pieces(_game.position());

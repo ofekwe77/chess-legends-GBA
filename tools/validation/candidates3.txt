@@ -1,0 +1,12 @@
+# Final challenge / story puzzle candidates (verified with: tools/cl.sh analyze --batch tools/validation/candidates3.txt)
+material|4k3/8/8/4B3/8/q7/8/4R1K1 w - - 0 1|2
+material|4k3/8/8/4B3/8/q7/8/4R1K1 w - - 0 1|3
+mate|5bk1/7p/4PQ2/8/8/8/8/6K1 w - - 0 1 mana=5/0|2
+mate|1k6/RN6/2K5/3r4/8/8/8/8 w - - 0 1 mana=6/0|3
+mate|1kB5/RN6/5K2/5p2/8/4B3/8/8 w - - 0 1 mana=6/0|3
+mate|3k4/1p1N2Q1/8/8/8/4P3/3B4/K7 w - - 0 1 mana=6/0|3
+mate|6k1/8/r4P2/3P2P1/8/7K/6Q1/8 w - - 0 1 mana=6/0|3
+mate|2k5/8/8/1R6/4K3/8/8/3n1NQ1 w - - 0 1 mana=6/0|3
+mate|4k3/7N/8/2R5/5K2/1P6/Q4n2/8 w - - 0 1 mana=6/0|3
+mate|2k2r2/2N1R3/p1K5/8/3p4/8/8/8 w - - 0 1 mana=6/0|3
+material|r2q1r2/pbp3kp/1p1p2p1/3N1p2/8/3Q4/PPP2PPP/R2R2K1 w - - 0 16 mana=3/1|2

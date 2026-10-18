@@ -1,0 +1,3 @@
+mate|7k/7p/8/8/2N5/1PPP4/1B6/6RK w - - 0 1 mana=3/0|2
+mate|4QNrk/6pp/8/8/8/8/8/6K1 w - - 0 1 mana=5/0|2
+material|4k3/8/5p2/4n3/8/3P4/8/4R1K1 w - - 0 1|2

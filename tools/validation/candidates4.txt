@@ -1,0 +1,9 @@
+# Story trial candidates: Castle Swap (World 2) and Ghost Walk (World 3) mates in 2 found by generate.exe
+mate|2N2k2/8/2R5/8/7K/6p1/8/R7 w - - 0 1 mana=6/0|3
+mate|2k5/8/4N3/5p2/RB6/8/8/5K1R w - - 0 1 mana=6/0|3
+mate|1B5k/8/8/1R3K2/2p5/4p3/8/8 w - - 0 1 mana=6/0|3
+mate|k7/8/2K2P2/N1R5/8/2P2n2/8/8 w - - 0 1 mana=6/0|3
+mate|2k3B1/5N2/2K5/8/3p4/6R1/P7/8 w - - 0 1 mana=6/0|3
+mate|8/4k3/1N6/8/K3pN2/1Q6/3B4/8 w - - 0 1 mana=6/0|3
+mate|7k/5P2/8/4K3/p3P3/7r/r7/1B6 w - - 0 1 mana=6/0|3
+mate|4k2B/6K1/8/8/1p3p2/4P3/2Q5/8 w - - 0 1 mana=6/0|3

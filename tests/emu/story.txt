@@ -1,0 +1,86 @@
+# Story mode on a fresh save: prologue, first kingdom introduction, world map, encounter list, briefing, the first
+# lesson match, save-and-quit and resume from the main menu.
+frames 60
+wait scene == 2 120
+tap START
+wait scene == 3 120
+frames 20
+# The cursor starts on STORY MODE.
+tap A
+wait scene == 7 200
+frames 90
+shot prologue
+expect dialogue_active == 1
+expect story_step == 0
+# Complete the first line, advance to the second.
+tap A
+frames 6
+tap A
+frames 70
+shot prologue_line2
+expect dialogue_line == 1
+# B skips the prologue, then the kingdom introduction.
+tap B
+frames 40
+shot world_intro
+tap B
+wait scene == 6 200
+frames 30
+shot story_map
+expect unlocked_worlds == 1
+tap A
+frames 10
+shot encounter_list
+tap A
+wait scene == 7 200
+frames 70
+shot lesson_intro
+expect story_step == 2
+tap B
+frames 20
+shot briefing
+tap A
+wait scene == 5 200
+wait match_active == 1 100
+frames 40
+shot lesson_match
+expect mode == 2
+expect encounter == 0
+expect side_to_move == 0
+# Play Qd1-d5 (cursor e2 -> d1, select, up to d5): a safe first move.
+tap LEFT
+tap DOWN
+tap A
+frames 4
+tap UP
+tap UP
+tap UP
+tap UP
+tap A
+wait side_to_move == 0 3000
+wait ui_state == 0 600
+expect plies == 2
+# Save and quit from the pause menu, then resume from the main menu.
+tap START
+frames 10
+shot pause_menu
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+wait scene == 3 200
+frames 20
+expect suspend_present == 1
+shot menu_continue
+snap hash_lo
+# With a saved match the cursor starts on CONTINUE.
+expect menu_index == 0
+tap A
+wait scene == 5 200
+wait match_active == 1 100
+frames 30
+same hash_lo
+expect plies == 2
+expect encounter == 0
+expect suspend_present == 0
+shot resumed

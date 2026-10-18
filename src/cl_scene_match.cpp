@@ -1323,6 +1323,8 @@ void MatchScene::_resume_from_pause()
 void MatchScene::_draw_menu(const char* title, const char* const* items, int count, int selected, int y)
 {
     _overlay_text.clear();
+    _panel_text.clear();
+    _icons.clear();
     const int height_tiles = 4 + (count * 13 + 7) / 8;
     const int top_tile = y / 8;
     _panel.window(4, top_tile, 22, height_tiles);
@@ -1373,7 +1375,6 @@ void MatchScene::_open_pause()
     _menu_index = 0;
     _overlay_open = false;
     _view.set_cursor_visible(false);
-    _update_pause();
 }
 
 void MatchScene::_update_pause()
@@ -1504,7 +1505,6 @@ void MatchScene::_open_settings()
     _state = State::SETTINGS;
     _menu_index = 0;
     _overlay_open = false;
-    _update_settings();
 }
 
 void MatchScene::_update_settings()
@@ -1625,7 +1625,6 @@ void MatchScene::_open_help(int ability)
     _help_page = 0;
     _overlay_open = false;
     _view.set_cursor_visible(false);
-    _update_help();
 }
 
 void MatchScene::_update_help()
@@ -1675,6 +1674,8 @@ void MatchScene::_update_help()
     }
 
     _overlay_text.clear();
+    _panel_text.clear();
+    _icons.clear();
     _panel.window(1, 2, 28, 17);
 
     if(_help_ability == help_hint_card)
@@ -1767,7 +1768,6 @@ void MatchScene::_open_confirm(Confirm confirm)
     _state = State::CONFIRM;
     _menu_index = 1;
     _overlay_open = false;
-    _update_confirm();
 }
 
 void MatchScene::_update_confirm()
@@ -1842,7 +1842,6 @@ void MatchScene::_open_promotion(int to)
     _state = State::PROMOTION;
     _menu_index = 0;
     _overlay_open = false;
-    _update_promotion();
 }
 
 void MatchScene::_update_promotion()
@@ -1906,8 +1905,6 @@ void MatchScene::_open_handoff()
         _view.rebuild_pieces(_game.position());
         _panel_dirty = true;
     }
-
-    _update_handoff();
 }
 
 void MatchScene::_update_handoff()
@@ -1915,6 +1912,8 @@ void MatchScene::_update_handoff()
     if(! _overlay_open)
     {
         _overlay_text.clear();
+        _panel_text.clear();
+        _icons.clear();
         _panel.window(5, 7, 20, 6);
         bn::string<24> title;
         bn::ostringstream stream(title);
@@ -1976,8 +1975,6 @@ void MatchScene::_open_game_over()
         _end_options[_end_count++] = EndOption::MAIN_MENU;
         break;
     }
-
-    _update_game_over();
 }
 
 void MatchScene::_update_game_over()
@@ -2046,6 +2043,8 @@ void MatchScene::_update_game_over()
 void MatchScene::_draw_game_over()
 {
     _overlay_text.clear();
+    _panel_text.clear();
+    _icons.clear();
     _panel.window(3, 3, 24, 15);
     const GameResult result = _game.result();
     const MatchMode mode = _g.setup.mode;

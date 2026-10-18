@@ -69,6 +69,14 @@ cmd_harness() {
 }
 
 cmd_emu() {
+    # Create the --out directory (screenshots, audio captures) before the run.
+    local previous=""
+    for arg in "$@"; do
+        if [ "$previous" = "--out" ]; then
+            mkdir -p "$arg"
+        fi
+        previous="$arg"
+    done
     ./tools/harness/build/cl_harness.exe "$@"
 }
 

@@ -5,6 +5,7 @@
 #include "bn_fixed_point.h"
 #include "bn_optional.h"
 #include "bn_sprite_animate_actions.h"
+#include "bn_sprite_palette_item.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
@@ -24,6 +25,9 @@ enum class Marker : uint8_t
     TARGET,     // Royal Command ally / spell source
     HINT        // inspection preview
 };
+
+// Sprite palette of an army: the light side, or the dark side (0 obsidian, 1-6 kingdom factions).
+[[nodiscard]] const bn::sprite_palette_item& army_palette(Color color, int faction);
 
 class BoardView
 {
@@ -46,11 +50,17 @@ public:
     // File and rank labels on the frame (accessibility option).
     void set_coordinates_visible(bool visible);
 
+    // Hides / shows the whole board (squares, markers, pieces, cursor) - e.g. during a battle scene.
+    void set_visible(bool visible);
+
     // Dark-side army palette: 0 = obsidian default, 1-6 = kingdom factions.
     void set_dark_faction(int faction);
 
     // Recreates every piece sprite from the position.
     void rebuild_pieces(const Position& pos);
+
+    // Releases every piece sprite (a battle scene needs the sprites; rebuild_pieces brings them back).
+    void clear_pieces();
 
     void set_selected(int sq);
     void set_last_move(int from, int to);
@@ -115,6 +125,7 @@ private:
     int _cursor_sq = 0x14;
     bool _flipped = false;
     bool _coordinates = true;
+    bool _cursor_wanted = true;
     bool _squares_dirty = true;
 
     void _draw_frame();

@@ -1,0 +1,116 @@
+# Spell effects on the board: each ability cast from the challenge position that teaches it (animations FULL),
+# with screenshots at the characteristic moments of each effect. Packed moves: from | to << 7 | aux << 14 |
+# kind << 21 (kinds: 7 Shadow Step, 8 Phase Shift, 9 Ghost Walk, 10 Castle Swap, 11 Royal Command, 12 Royal Escape).
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
+wait scene == 2 120
+frames 30
+cmd 11
+
+# Shadow Ambush: b2-a2. Smoke gathers, a shadow silhouette shifts sideways, the smoke disperses.
+cmd 10 5
+wait challenge == 5 200
+wait ui_state == 0 100
+frames 20
+cmd 3 14682129
+wait animating == 1 30
+frames 8
+shot shadow_step_1_smoke
+frames 14
+shot shadow_step_2_silhouette
+frames 14
+shot shadow_step_3_disperse
+wait animating == 0 120
+expect spells == 1
+
+# Phantom Fork: d7-c7. The knight flashes, leaves an afterimage, a flare at the destination, it reappears.
+cmd 10 6
+wait challenge == 6 200
+wait ui_state == 0 100
+frames 20
+cmd 3 16789859
+wait animating == 1 30
+frames 5
+shot phase_shift_1_flash
+frames 10
+shot phase_shift_2_afterimage
+frames 8
+shot phase_shift_3_flare
+frames 8
+shot phase_shift_4_reappear
+wait animating == 0 120
+expect spells == 2
+
+# Through the Veil: b2-d4 through the c3 pawn. Translucent inside a spectral aura.
+cmd 10 7
+wait challenge == 7 200
+wait ui_state == 0 100
+frames 20
+cmd 3 18880913
+wait animating == 1 30
+frames 14
+shot ghost_walk_1_aura
+frames 12
+shot ghost_walk_2_through
+frames 18
+shot ghost_walk_3_rematerialize
+wait animating == 0 120
+expect spells == 3
+
+# Fortress Shift: rook a5 swaps with the a8 knight. Connection, golden glow, crossing trails, shockwave.
+cmd 10 8
+wait challenge == 8 200
+wait ui_state == 0 100
+frames 20
+cmd 3 20985920
+wait animating == 1 30
+frames 6
+shot castle_swap_1_connection
+frames 18
+shot castle_swap_2_crossing
+frames 13
+shot castle_swap_3_shockwave
+wait animating == 0 120
+expect spells == 4
+
+# The Queen's Word: the f6 queen commands the e6 pawn to f7. Rune, energy line, the ally moves, sparkle.
+cmd 10 9
+wait challenge == 9 200
+wait ui_state == 0 100
+frames 20
+cmd 3 24474324
+wait animating == 1 30
+frames 10
+shot royal_command_1_rune
+frames 6
+shot royal_command_2_energy
+frames 14
+shot royal_command_3_ally_moves
+frames 12
+shot royal_command_4_dissipate
+wait animating == 0 120
+expect spells == 5
+
+# Crownless Flight: the checked king leaps g1-g3. Darkness, royal seal, golden flash, leap, the seal breaks.
+cmd 10 10
+wait challenge == 10 200
+wait ui_state == 0 100
+frames 20
+expect in_check == 1
+cmd 3 25170694
+wait animating == 1 30
+frames 8
+shot royal_escape_1_seal
+frames 6
+shot royal_escape_2_gold
+frames 12
+shot royal_escape_3_leap
+frames 14
+shot royal_escape_4_seal_breaks
+wait animating == 0 120
+expect spells == 6
+frames 30
+shot royal_escape_5_after
+print spells sprites_max stack_free fps_drops cpu_max

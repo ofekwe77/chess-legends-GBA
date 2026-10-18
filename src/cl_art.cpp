@@ -29,17 +29,28 @@
 #include "bn_sprite_items_portrait_tamsin.h"
 #include "bn_sprite_items_portrait_veyra.h"
 #include "bn_sprite_items_portrait_ysra.h"
+#include "bn_sprite_items_spell_fx.h"
 
 namespace cl::gba
 {
 
+using namespace particle;
+
 namespace
 {
-    // Frame indices in particles.bmp (see assets_source/gen_effects.py).
-    enum ParticleFrame
+    // Frame sequences in spell_fx.bmp (assets_source/gen_effects.py), indexed by Fx.
+    struct FxFrames
     {
-        LEAF_A, LEAF_B, EMBER_A, EMBER_B, SNOW_A, SNOW_B, RUNE_A, RUNE_B, RAIN, SPARK_A, SPARK_B, FRAGMENT, STAR,
-        ORB, SMOKE, SHARD
+        uint8_t first;
+        uint8_t count;
+    };
+
+    constexpr FxFrames fx_frames[] = {
+        { 0, 3 },       // SMOKE: dense, spreading, wisps
+        { 3, 3 },       // RING: small, medium, large
+        { 8, 3 },       // GOLD_RING
+        { 6, 2 },       // FLARE: large, small
+        { 11, 1 },      // GLOW
     };
 }
 
@@ -84,6 +95,113 @@ const bn::sprite_item& portrait_item(Character character)
     case Character::TAMSIN: return bn::sprite_items::portrait_tamsin;
     default: return bn::sprite_items::portrait_seraph;
     }
+}
+
+// ------------------------------------------------------------------------------------------------ effects
+
+void EffectLayer::spawn(int frame, bn::fixed x, bn::fixed y, bn::fixed vx, bn::fixed vy, int life, int bg_priority)
+{
+    if(_sprites.full())
+    {
+        // Recycle the oldest particle.
+        _sprites.erase(_sprites.begin());
+        _particles.erase(_particles.begin());
+    }
+
+    bn::sprite_ptr sprite = bn::sprite_items::particles.create_sprite(x + _offset_x, y + _offset_y, frame);
+    sprite.set_bg_priority(bg_priority);
+    sprite.set_z_order(-15);
+    _sprites.push_back(bn::move(sprite));
+    Particle particle;
+    particle.x = x;
+    particle.y = y;
+    particle.vx = vx;
+    particle.vy = vy;
+    particle.life = life;
+    _particles.push_back(particle);
+    ++_spawned;
+}
+
+void EffectLayer::burst(int frame, bn::fixed x, bn::fixed y, int count, bn::fixed speed, int life, int bg_priority)
+{
+    for(int i = 0; i < count; ++i)
+    {
+        const int angle = (i * 2048 / count + _spawned * 37) & 2047;
+        spawn(frame, x, y, bn::lut_sin((angle + 512) & 2047) * speed, bn::lut_sin(angle) * speed, life,
+              bg_priority);
+    }
+}
+
+void EffectLayer::update()
+{
+    for(int i = 0; i < _particles.size();)
+    {
+        Particle& p = _particles[i];
+
+        if(--p.life <= 0)
+        {
+            _sprites.erase(_sprites.begin() + i);
+            _particles.erase(_particles.begin() + i);
+            continue;
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+        _sprites[i].set_position(p.x + _offset_x, p.y + _offset_y);
+        _sprites[i].set_visible(p.life > 4 || (p.life & 1));     // flicker out
+        ++i;
+    }
+
+    for(int i = 0; i < _effects.size();)
+    {
+        Effect& e = _effects[i];
+
+        if(++e.timer >= e.step)
+        {
+            e.timer = 0;
+
+            if(++e.index >= fx_frames[int(e.kind)].count)
+            {
+                _fx_sprites.erase(_fx_sprites.begin() + i);
+                _effects.erase(_effects.begin() + i);
+                continue;
+            }
+
+            _fx_sprites[i].set_tiles(bn::sprite_items::spell_fx.tiles_item(), fx_frames[int(e.kind)].first + e.index);
+        }
+
+        _fx_sprites[i].set_position(e.x + _offset_x, e.y + _offset_y);
+        ++i;
+    }
+}
+
+void EffectLayer::fx(Fx kind, bn::fixed x, bn::fixed y, int step, int bg_priority, bool behind)
+{
+    if(_fx_sprites.full())
+    {
+        _fx_sprites.erase(_fx_sprites.begin());
+        _effects.erase(_effects.begin());
+    }
+
+    bn::sprite_ptr sprite = bn::sprite_items::spell_fx.create_sprite(x + _offset_x, y + _offset_y,
+                                                                     fx_frames[int(kind)].first);
+    sprite.set_bg_priority(bg_priority);
+    sprite.set_z_order(behind ? 5 : -14);
+    _fx_sprites.push_back(bn::move(sprite));
+    Effect effect;
+    effect.x = x;
+    effect.y = y;
+    effect.kind = kind;
+    effect.step = uint8_t(step < 1 ? 1 : step);
+    _effects.push_back(effect);
+}
+
+void EffectLayer::clear()
+{
+    _sprites.clear();
+    _particles.clear();
+    _fx_sprites.clear();
+    _effects.clear();
 }
 
 // ------------------------------------------------------------------------------------------------ mini board

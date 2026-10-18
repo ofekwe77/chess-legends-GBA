@@ -1,0 +1,114 @@
+# Capture battle scenes: a capture plays a duel, skipping one leaves the identical state, FAST mode shows only
+# major captures (at double speed).
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
+wait scene == 2 120
+frames 30
+cmd 11
+# Hot-seat Arcane match on the Verdant board (animations FULL by default).
+cmd 2 1 3 0 1
+wait scene == 5 200
+wait match_active == 1 100
+expect anim_mode == 0
+wait ui_state == 7 100
+tap A
+wait ui_state == 0 60
+# 1. e4 d5 (packed moves: from | to << 7 | kind << 21 | capture << 25).
+cmd 3 4200980
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+cmd 3 4202979
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+expect battle_scenes == 0
+# 2. exd5: the soldier captures the soldier.
+cmd 3 35660212
+wait ui_state == 14 100
+expect animating == 1
+expect captures == 1
+frames 30
+expect battle_scenes == 1
+shot battle_entrance
+frames 34
+shot battle_impact
+frames 14
+shot battle_defeat
+frames 30
+shot battle_victory
+wait ui_state == 7 300
+frames 12
+shot battle_board_back
+expect plies == 3
+expect animating == 0
+snap hash_lo
+
+# The same capture again in a new match, skipped with A as soon as the duel starts: the same position.
+cmd 2 1 3 0 1
+wait plies == 0 200
+wait ui_state == 7 100
+frames 20
+tap A
+wait ui_state == 0 60
+cmd 3 4200980
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+cmd 3 4202979
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+cmd 3 35660212
+wait ui_state == 14 100
+frames 12
+expect battle_scenes == 2
+tap A
+wait ui_state == 7 30
+expect plies == 3
+same hash_lo
+tap A
+wait ui_state == 0 60
+
+# 2... Qxd5: the sorceress casts her spell circle.
+cmd 3 35660275
+wait ui_state == 14 100
+frames 48
+shot battle_spell_circle
+frames 24
+shot battle_spell_impact
+wait ui_state == 7 300
+expect battle_scenes == 3
+tap A
+wait ui_state == 0 60
+# 3. Nc3
+cmd 3 4353
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+
+# FAST: 3... Qxa2 takes a pawn - no duel; 4. Rxa2 takes the queen - a duel at double speed.
+cmd 4 1
+frames 2
+cmd 3 35653699
+wait ui_state == 7 200
+expect battle_scenes == 3
+tap A
+wait ui_state == 0 60
+cmd 3 35653632
+wait ui_state == 14 100
+frames 40
+expect battle_scenes == 4
+shot battle_fast
+expect toast == 0
+wait ui_state == 7 120
+expect plies == 7
+# Session total: one capture in the first match, four in the second.
+expect captures == 5
+# Queensbane (capturing a queen) waited for the board.
+frames 30
+expect toast != 0
+shot toast_after_battle
+print battle_scenes captures plies stack_free sprites sprites_max

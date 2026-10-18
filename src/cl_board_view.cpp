@@ -338,7 +338,7 @@ void BoardView::commit()
     _marker_layer.commit();
 }
 
-void BoardView::rebuild_pieces(const Position& pos)
+void BoardView::clear_pieces()
 {
     _pieces.clear();
 
@@ -346,6 +346,11 @@ void BoardView::rebuild_pieces(const Position& pos)
     {
         index = -1;
     }
+}
+
+void BoardView::rebuild_pieces(const Position& pos)
+{
+    clear_pieces();
 
     for(int index = 0; index < 64; ++index)
     {
@@ -392,7 +397,29 @@ void BoardView::set_cursor(int sq)
 
 void BoardView::set_cursor_visible(bool visible)
 {
+    _cursor_wanted = visible;
     _cursor->set_visible(visible);
+}
+
+const bn::sprite_palette_item& army_palette(Color color, int faction)
+{
+    return color == WHITE ? bn::sprite_palette_items::army_white : dark_palette(faction);
+}
+
+void BoardView::set_visible(bool visible)
+{
+    _board.bg().set_visible(visible);
+    _marker_layer.bg().set_visible(visible);
+
+    for(bn::sprite_ptr& sprite : _pieces)
+    {
+        sprite.set_visible(visible);
+    }
+
+    if(_cursor)
+    {
+        _cursor->set_visible(visible && _cursor_wanted);
+    }
 }
 
 void BoardView::update()

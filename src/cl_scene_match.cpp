@@ -1,10 +1,13 @@
 // CHESS LEGENDS: ARCANE WARS - the match scene.
 #include "cl_scene_match.h"
 
+#include "bn_bg_palettes.h"
 #include "bn_blending.h"
+#include "bn_color.h"
 #include "bn_core.h"
 #include "bn_keypad.h"
 #include "bn_math.h"
+#include "bn_sprite_palettes.h"
 #include "bn_string.h"
 
 #include "cl_ai_runner.h"
@@ -20,6 +23,12 @@
 #include "cl_tutorial.h"
 
 #include "bn_sprite_items_ability_icons.h"
+#include "bn_sprite_items_particles.h"
+#include "bn_sprite_items_pieces.h"
+#include "bn_sprite_items_sigils.h"
+#include "bn_sprite_palette_items_tint_flash.h"
+#include "bn_sprite_palette_items_tint_gold.h"
+#include "bn_sprite_palette_items_tint_shadow.h"
 
 namespace cl::gba
 {
@@ -36,6 +45,55 @@ namespace
     constexpr const char* animation_names[] = { "FULL", "FAST", "MINIMAL", "OFF" };
 
     constexpr int help_hint_card = ABILITIES_COUNT;   // help state showing the challenge hint
+    constexpr int battle_fade_frames = 8;             // board fade out before a duel / fade in after it
+
+    void set_screen_fade(bn::fixed intensity)
+    {
+        bn::bg_palettes::set_fade(bn::color(0, 0, 0), intensity);
+        bn::sprite_palettes::set_fade(bn::color(0, 0, 0), intensity);
+    }
+
+    // Progress of a spell's movement at animation time t: each ability moves during its own part of the spell.
+    bn::fixed spell_motion(MoveKind kind, bn::fixed t)
+    {
+        bn::fixed start = 0;
+        bn::fixed end = 1;
+
+        switch(kind)
+        {
+        case MK_SHADOW_STEP: start = bn::fixed(0.3); end = bn::fixed(0.7); break;
+        case MK_PHASE_SHIFT: return t < bn::fixed(0.6) ? 0 : 1;
+        case MK_CASTLE_SWAP: start = bn::fixed(0.25); end = bn::fixed(0.75); break;
+        case MK_ROYAL_COMMAND: start = bn::fixed(0.4); end = bn::fixed(0.85); break;
+        case MK_ROYAL_ESCAPE: start = bn::fixed(0.35); end = bn::fixed(0.8); break;
+        default: return t;     // Ghost Walk glides the whole time
+        }
+
+        if(t <= start)
+        {
+            return 0;
+        }
+
+        if(t >= end)
+        {
+            return 1;
+        }
+
+        const bn::fixed m = (t - start) / (end - start);
+        return m * m * (3 - 2 * m);     // eased
+    }
+
+    // A dotted line of particles between two points (spell connections).
+    void particle_line(EffectLayer& effects, int frame, bn::fixed_point from, bn::fixed_point to, int life)
+    {
+        constexpr int dots = 4;
+
+        for(int i = 1; i <= dots; ++i)
+        {
+            const bn::fixed_point point = from + (to - from) * bn::fixed(i) / (dots + 1);
+            effects.spawn(frame, point.x(), point.y(), 0, 0, life, 2);
+        }
+    }
 
     const char* side_name(Color c)
     {
@@ -780,21 +838,29 @@ bn::optional<SceneId> MatchScene::update()
         _update_lesson();
         break;
 
+    case State::BATTLE:
+        _update_battle();
+        break;
+
     default:
         break;
     }
 
-    if(_message_frames > 0 && --_message_frames == 0)
+    _update_fade_in();
+    const bool battle = _state == State::BATTLE;
+
+    if(_message_frames > 0 && --_message_frames == 0 && ! battle)
     {
         _set_status();
     }
 
-    if(_panel_dirty && ! _overlay_open)
+    if(_panel_dirty && ! _overlay_open && ! battle)
     {
         _refresh_panel();
     }
 
-    _toast.update();
+    _toast.update(! battle);
+    _effects.update();
     _view.update();
     _view.commit();
     _panel.commit();
@@ -1273,7 +1339,13 @@ int MatchScene::_animation_length(const Move& move) const
 
     if(move.is_magic())
     {
-        base += base / 2;
+        // Spells get time for their effects (MINIMAL keeps a short glide).
+        switch(animation_mode())
+        {
+        case AnimationMode::FULL: return 48;
+        case AnimationMode::FAST: return 28;
+        default: return base + base / 2;
+        }
     }
 
     return base;
@@ -1295,29 +1367,31 @@ void MatchScene::_execute(Move move)
     _last_move = move;
 
     // Sound: the game result first, then check, then what the action was.
+    Sound sound;
+
     if(_game.over() && _game.reason() == ResultReason::CHECKMATE)
     {
-        play_sound(Sound::CHECKMATE);
+        sound = Sound::CHECKMATE;
     }
     else if(_game.over() && _game.reason() == ResultReason::STALEMATE)
     {
-        play_sound(Sound::STALEMATE);
+        sound = Sound::STALEMATE;
     }
     else if(info.check)
     {
-        play_sound(Sound::CHECK);
+        sound = Sound::CHECK;
     }
     else if(move.is_magic())
     {
-        play_sound(spell_sound(move.ability()));
+        sound = spell_sound(move.ability());
     }
     else if(move.kind() == MK_PROMOTION)
     {
-        play_sound(Sound::PROMOTION);
+        sound = Sound::PROMOTION;
     }
     else
     {
-        play_sound(info.captured != EMPTY ? Sound::CAPTURE : Sound::PIECE_MOVE);
+        sound = info.captured != EMPTY ? Sound::CAPTURE : Sound::PIECE_MOVE;
     }
 
     if(info.captured != EMPTY)
@@ -1333,6 +1407,29 @@ void MatchScene::_execute(Move move)
 
     _after_action(info);
 
+    // A capture may be shown as a duel. Before it only a spell is heard; the duel plays the capture itself and the
+    // result (check, checkmate, stalemate, promotion) follows it.
+    const bool battle = _battle_wanted(info);
+    int deferred_sound = -1;
+
+    if(! battle)
+    {
+        play_sound(sound);
+    }
+    else
+    {
+        if(move.is_magic())
+        {
+            play_sound(spell_sound(move.ability()));
+        }
+
+        if(sound == Sound::CHECKMATE || sound == Sound::STALEMATE || sound == Sound::CHECK ||
+           sound == Sound::PROMOTION)
+        {
+            deferred_sound = int(sound);
+        }
+    }
+
     _view.clear_markers();
     _threat_markers = false;
     _view.set_selected(NO_SQUARE);
@@ -1347,6 +1444,8 @@ void MatchScene::_execute(Move move)
     _anim.mover_from = _view.square_center(move.from());
     _anim.mover_to = _view.square_center(move.to());
     _anim.victim_sq = info.captured_sq;
+    _anim.battle = battle;
+    _anim.deferred_sound = int8_t(deferred_sound);
 
     switch(move.kind())
     {
@@ -1396,26 +1495,37 @@ void MatchScene::_update_animation()
 {
     if(bn::keypad::a_pressed() || bn::keypad::b_pressed())
     {
-        // Skipping only shortens the presentation: the game state was already applied.
+        // Skipping only shortens the presentation (the duel too): the game state was already applied.
+        _anim.battle = false;
         _finish_animation();
         return;
     }
 
+    const bn::fixed previous = bn::fixed(_anim.frame) / _anim.length;
     ++_anim.frame;
     const bn::fixed t = bn::fixed(_anim.frame) / _anim.length;
     const MoveKind kind = _anim.move.kind();
+    const AnimationMode mode = animation_mode();
+    const bool spell = _anim.move.is_magic() && (mode == AnimationMode::FULL || mode == AnimationMode::FAST);
+    const bn::fixed motion = spell ? spell_motion(kind, t) : t;
+    const bn::fixed lift = motion * (1 - motion);
     bn::sprite_ptr* mover = _view.sprite_at(_anim.mover_sq);
 
     if(mover)
     {
-        bn::fixed_point position = _anim.mover_from + (_anim.mover_to - _anim.mover_from) * t;
+        bn::fixed_point position = _anim.mover_from + (_anim.mover_to - _anim.mover_from) * motion;
 
         if(kind == MK_ROYAL_ESCAPE)
         {
             // leap in an arc
-            position.set_y(position.y() - t * (1 - t) * 40);
+            position.set_y(position.y() - lift * 40);
         }
-        else if(kind == MK_PHASE_SHIFT)
+        else if(kind == MK_CASTLE_SWAP)
+        {
+            // the two pieces cross on opposite arcs
+            position.set_y(position.y() - lift * 24);
+        }
+        else if(kind == MK_PHASE_SHIFT && ! spell)
         {
             // vanish, then reappear at the destination
             position = t < bn::fixed(0.5) ? _anim.mover_from : _anim.mover_to;
@@ -1431,12 +1541,19 @@ void MatchScene::_update_animation()
         {
             if(partner != mover)
             {
-                partner->set_position(_anim.partner_from + (_anim.partner_to - _anim.partner_from) * t);
+                bn::fixed_point position = _anim.partner_from + (_anim.partner_to - _anim.partner_from) * motion;
+
+                if(kind == MK_CASTLE_SWAP)
+                {
+                    position.set_y(position.y() + lift * 24);
+                }
+
+                partner->set_position(position);
             }
         }
     }
 
-    if(_anim.victim_sq != NO_SQUARE && _anim.victim_sq != _anim.mover_sq)
+    if(_anim.victim_sq != NO_SQUARE && _anim.victim_sq != _anim.mover_sq && ! _anim.battle)
     {
         if(bn::sprite_ptr* victim = _view.sprite_at(_anim.victim_sq))
         {
@@ -1447,20 +1564,408 @@ void MatchScene::_update_animation()
         }
     }
 
+    if(spell)
+    {
+        _update_spell(previous, t, mover);
+    }
+
     if(_anim.frame >= _anim.length)
     {
         _finish_animation();
     }
 }
 
+void MatchScene::_update_spell(bn::fixed previous, bn::fixed t, bn::sprite_ptr* mover)
+{
+    using namespace particle;
+    const auto crossed = [previous, t](bn::fixed mark) { return previous < mark && t >= mark; };
+    const bool calm = _g.profile.settings.reduced_effects;     // no flashing, no darkening
+    const int frame = _anim.frame;
+    const bn::fixed_point from = _anim.mover_from;
+    const bn::fixed_point to = _anim.mover_to;
+    const bn::fixed_point here = mover ? mover->position() : to;
+    const bn::sprite_palette_item& army = army_palette(_anim.info.mover, _g.setup.opponent_faction);
+
+    switch(_anim.move.kind())
+    {
+    case MK_SHADOW_STEP:
+        // Dark smoke gathers, the pawn becomes a shadow silhouette that shifts sideways, the smoke disperses.
+        if(frame == 1)
+        {
+            _effects.fx(Fx::SMOKE, from.x(), from.y(), 6, 2);
+            _effects.fx(Fx::SMOKE, from.x() - 6, from.y() + 3, 7, 2);
+            _effects.fx(Fx::SMOKE, from.x() + 6, from.y() + 2, 8, 2);
+
+            if(mover)
+            {
+                mover->set_palette(bn::sprite_palette_items::tint_shadow);
+            }
+        }
+
+        if(t > bn::fixed(0.3) && t < bn::fixed(0.7) && frame % 4 == 0)
+        {
+            _effects.fx(Fx::SMOKE, here.x(), here.y() + 2, 3, 2);
+        }
+
+        if(crossed(bn::fixed(0.7)))
+        {
+            _effects.fx(Fx::SMOKE, to.x(), to.y(), 5, 2);
+            _effects.fx(Fx::SMOKE, to.x() - 7, to.y() + 2, 6, 2);
+            _effects.fx(Fx::SMOKE, to.x() + 7, to.y() + 3, 6, 2);
+            _effects.burst(SMOKE, to.x(), to.y(), 6, bn::fixed(0.8), 20, 2);
+        }
+
+        if(crossed(bn::fixed(0.82)) && mover)
+        {
+            mover->set_palette(army);
+        }
+        break;
+
+    case MK_PHASE_SHIFT:
+        // The knight flashes, leaves an afterimage and vanishes, a flare at the destination, it reappears.
+        if(mover && t < bn::fixed(0.2) && ! calm)
+        {
+            mover->set_palette((frame & 2) ? bn::sprite_palette_items::tint_flash : army);
+        }
+
+        if(crossed(bn::fixed(0.2)))
+        {
+            if(mover)
+            {
+                mover->set_palette(army);
+                mover->set_visible(false);
+            }
+
+            _spell_sprite = bn::sprite_items::pieces.create_sprite(from, type_of(_anim.info.piece) - 1);
+            _spell_sprite->set_palette(bn::sprite_palette_items::tint_flash);
+            _spell_sprite->set_bg_priority(2);
+            _effects.fx(Fx::RING, from.x(), from.y(), 3, 2);
+            _effects.burst(SPARK_A, from.x(), from.y(), 6, bn::fixed(0.7), 18, 2);
+        }
+
+        if(_spell_sprite && t < bn::fixed(0.45))
+        {
+            _spell_sprite->set_visible(frame & 1);      // the afterimage flickers away
+        }
+
+        if(crossed(bn::fixed(0.45)))
+        {
+            _spell_sprite.reset();
+            _effects.fx(Fx::FLARE, to.x(), to.y(), 4, 2);
+            _effects.burst(STAR, to.x(), to.y(), 8, bn::fixed(0.9), 18, 2);
+        }
+
+        if(crossed(bn::fixed(0.6)) && mover)
+        {
+            mover->set_visible(true);
+            mover->set_palette(calm ? army : bn::sprite_palette_items::tint_flash);
+            _effects.fx(Fx::RING, to.x(), to.y(), 3, 2);
+            _effects.burst(SPARK_B, to.x(), to.y(), 6, bn::fixed(0.5), 16, 2);
+        }
+
+        if(crossed(bn::fixed(0.75)) && mover)
+        {
+            mover->set_palette(army);
+        }
+        break;
+
+    case MK_GHOST_WALK:
+        // Translucent inside a spectral aura, the bishop passes through the blocking piece and rematerializes.
+        if(t < bn::fixed(0.9))
+        {
+            if(frame % 2 == 1)
+            {
+                _effects.fx(Fx::GLOW, here.x(), here.y(), 2, 2, true);
+            }
+
+            if(frame % 4 == 0)
+            {
+                const int angle = (frame * 160) & 2047;
+                _effects.spawn(ORB, here.x() + bn::lut_sin((angle + 512) & 2047) * 8,
+                               here.y() + bn::lut_sin(angle) * 8, 0, bn::fixed(-0.2), 14, 2);
+            }
+        }
+
+        if(crossed(bn::fixed(0.9)) && mover)
+        {
+            mover->set_blending_enabled(false);
+            _effects.fx(Fx::FLARE, to.x(), to.y(), 4, 2);
+            _effects.burst(STAR, to.x(), to.y(), 6, bn::fixed(0.6), 16, 2);
+        }
+        break;
+
+    case MK_CASTLE_SWAP:
+    {
+        // A connection forms, both pieces glow, their trails cross as they swap, a shockwave confirms it.
+        bn::sprite_ptr* partner = _view.sprite_at(_anim.partner_sq);
+
+        if(frame == 1)
+        {
+            for(bn::sprite_ptr* piece : { mover, partner })
+            {
+                if(piece)
+                {
+                    piece->set_palette(bn::sprite_palette_items::tint_gold);
+                }
+            }
+        }
+
+        if(t < bn::fixed(0.25) && frame % 4 == 1)
+        {
+            particle_line(_effects, ORB, from, to, 7);
+        }
+
+        if(t >= bn::fixed(0.25) && t < bn::fixed(0.75) && (frame & 1))
+        {
+            _effects.spawn(SPARK_B, here.x(), here.y(), 0, 0, 10, 2);
+
+            if(partner)
+            {
+                _effects.spawn(SPARK_B, partner->x(), partner->y(), 0, 0, 10, 2);
+            }
+        }
+
+        if(crossed(bn::fixed(0.75)))
+        {
+            _effects.fx(Fx::RING, to.x(), to.y(), 3, 2);
+            _effects.fx(Fx::RING, from.x(), from.y(), 3, 2);
+            _effects.burst(SHARD, to.x(), to.y(), 6, bn::fixed(1.0), 16, 2);
+            _effects.burst(SHARD, from.x(), from.y(), 6, bn::fixed(1.0), 16, 2);
+        }
+
+        if(crossed(bn::fixed(0.85)))
+        {
+            for(bn::sprite_ptr* piece : { mover, partner })
+            {
+                if(piece)
+                {
+                    piece->set_palette(army);
+                }
+            }
+        }
+        break;
+    }
+
+    case MK_ROYAL_COMMAND:
+    {
+        // The queen raises a glowing symbol, energy reaches the ally, the ally moves, the spell dissipates.
+        const int queen_sq = _anim.move.aux();
+        const bn::fixed_point queen = _view.square_center(queen_sq);
+        bn::sprite_ptr* queen_sprite = _view.sprite_at(queen_sq);
+
+        if(frame == 1)
+        {
+            _spell_sprite = bn::sprite_items::particles.create_sprite(queen.x(), queen.y() - 12, RUNE_A);
+            _spell_sprite->set_bg_priority(2);
+            _spell_sprite->set_z_order(-12);
+            _effects.fx(Fx::GOLD_RING, queen.x(), queen.y(), 4, 2);
+
+            if(queen_sprite && ! calm)
+            {
+                queen_sprite->set_palette(bn::sprite_palette_items::tint_gold);
+            }
+        }
+
+        if(_spell_sprite)
+        {
+            _spell_sprite->set_tiles(bn::sprite_items::particles.tiles_item(), (frame >> 3) & 1 ? RUNE_B : RUNE_A);
+            _spell_sprite->set_y(queen.y() - 12 - ((frame >> 2) & 1));
+        }
+
+        if(t >= bn::fixed(0.15) && t < bn::fixed(0.4) && frame % 4 == 0)
+        {
+            particle_line(_effects, ORB, queen, from, 7);
+        }
+
+        if(t >= bn::fixed(0.4) && t < bn::fixed(0.85) && frame % 3 == 0)
+        {
+            _effects.spawn(SPARK_A, here.x(), here.y(), 0, bn::fixed(-0.2), 12, 2);
+        }
+
+        if(crossed(bn::fixed(0.85)))
+        {
+            _effects.fx(Fx::FLARE, to.x(), to.y(), 4, 2);
+            _effects.burst(STAR, to.x(), to.y(), 8, bn::fixed(0.8), 18, 2);
+            _spell_sprite.reset();
+
+            if(queen_sprite)
+            {
+                queen_sprite->set_palette(army);
+            }
+        }
+        break;
+    }
+
+    case MK_ROYAL_ESCAPE:
+        // The screen darkens, a royal seal appears, the king flashes gold and leaps, the seal breaks apart.
+        if(frame == 1)
+        {
+            if(! calm)
+            {
+                bn::bg_palettes::set_fade(bn::color(0, 0, 0), bn::fixed(0.45));
+                _spell_dimmed = true;
+            }
+
+            _spell_sprite = bn::sprite_items::sigils.create_sprite(from, 5);
+            _spell_sprite->set_bg_priority(2);
+            _spell_sprite->set_z_order(5);
+            _effects.fx(Fx::GOLD_RING, from.x(), from.y(), 4, 2, true);
+        }
+
+        if(mover && t >= bn::fixed(0.2) && t < bn::fixed(0.35))
+        {
+            mover->set_palette(calm || (frame & 2) ? bn::sprite_palette_items::tint_gold : army);
+        }
+
+        if(crossed(bn::fixed(0.35)) && mover)
+        {
+            mover->set_palette(bn::sprite_palette_items::tint_gold);
+        }
+
+        if(t >= bn::fixed(0.35) && t < bn::fixed(0.8) && (frame & 1))
+        {
+            _effects.spawn(STAR, here.x(), here.y() + 4, 0, bn::fixed(0.15), 12, 2);
+        }
+
+        if(crossed(bn::fixed(0.8)))
+        {
+            _spell_sprite.reset();
+            _effects.fx(Fx::GOLD_RING, from.x(), from.y(), 3, 2);
+            _effects.fx(Fx::GOLD_RING, to.x(), to.y(), 4, 2);
+            _effects.burst(FRAGMENT, from.x(), from.y(), 10, bn::fixed(1.1), 20, 2);
+        }
+
+        if(_spell_dimmed && t > bn::fixed(0.8))
+        {
+            bn::bg_palettes::set_fade(bn::color(0, 0, 0), bn::fixed(0.45) * (1 - t) * 5);
+        }
+
+        if(crossed(bn::fixed(0.9)) && mover)
+        {
+            mover->set_palette(army);
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
 void MatchScene::_finish_animation()
 {
+    _spell_sprite.reset();
+
+    if(_spell_dimmed)
+    {
+        bn::bg_palettes::set_fade(bn::color(0, 0, 0), 0);
+        _spell_dimmed = false;
+    }
+
+    if(_anim.battle)
+    {
+        // The board fades out and the duel begins (_update_battle).
+        _anim.battle = false;
+        _state = State::BATTLE;
+        _battle_fade = battle_fade_frames;
+        return;
+    }
+
+    if(_anim.deferred_sound >= 0)
+    {
+        play_sound(Sound(_anim.deferred_sound));
+        _anim.deferred_sound = -1;
+    }
+
     bn::blending::set_transparency_alpha(1);
     _view.rebuild_pieces(_game.position());
     const Move move = _anim.move;
     _view.set_last_move(move.from(), move.to());
     _view.set_cursor(move.to());
     _begin_turn();
+}
+
+bool MatchScene::_battle_wanted(const ActionInfo& info) const
+{
+    if(info.captured == EMPTY)
+    {
+        return false;
+    }
+
+    switch(animation_mode())
+    {
+    case AnimationMode::FULL:
+        return true;
+
+    case AnimationMode::FAST:
+        // Only major captures: pieces above a pawn, or the capture that ends the game.
+        return type_of(info.captured) != PAWN || _game.over();
+
+    default:
+        return false;
+    }
+}
+
+void MatchScene::_update_battle()
+{
+    if(! _battle)
+    {
+        if(bn::keypad::a_pressed() || bn::keypad::b_pressed())
+        {
+            _end_battle();
+            return;
+        }
+
+        // The board fades out first.
+        --_battle_fade;
+        set_screen_fade(bn::fixed(battle_fade_frames - _battle_fade) / battle_fade_frames);
+
+        if(_battle_fade > 0)
+        {
+            return;
+        }
+
+        // The duel takes the place of the board, whose piece sprites are released for it.
+        _view.clear_pieces();
+        _view.set_visible(false);
+        _effects.clear();
+        _panel_text.clear();
+        _status_text.clear();
+        _hint_text.clear();
+        _icons.clear();
+
+        const ActionInfo& info = _anim.info;
+        const int theme = _g.setup.board_theme;
+        const Backdrop backdrop = theme >= 1 && theme <= worlds_count ? world_backdrop(theme - 1) : Backdrop::TITLE;
+        _battle.emplace(type_of(info.piece), info.mover, type_of(info.captured), opposite(info.mover), backdrop,
+                        _g.setup.opponent_faction, animation_mode() == AnimationMode::FAST, _panel);
+        return;
+    }
+
+    if(! _battle->update())
+    {
+        _end_battle();
+    }
+}
+
+void MatchScene::_end_battle()
+{
+    _battle.reset();
+    _view.set_visible(true);
+    _panel.clear(0);
+    _draw_panel_frame();
+    _panel_dirty = true;
+    set_screen_fade(1);
+    _fade_in = battle_fade_frames;
+    _finish_animation();
+}
+
+void MatchScene::_update_fade_in()
+{
+    if(_fade_in > 0)
+    {
+        --_fade_in;
+        set_screen_fade(bn::fixed(_fade_in) / battle_fade_frames);
+    }
 }
 
 // ------------------------------------------------------------------------------------------------ AI
@@ -1495,6 +2000,8 @@ bool MatchScene::think_frame()
     }
 
     test_interface().ai_thinking = 1;
+    _update_fade_in();
+    _effects.update();
     _toast.update();
     _view.update();
     _view.commit();
@@ -2867,7 +3374,7 @@ void MatchScene::_publish_state()
     ti.flipped = _view.flipped();
     ti.menu_index = uint32_t(_menu_index);
     ti.menu_count = uint32_t(_menu_count);
-    ti.animating = _state == State::ANIMATING;
+    ti.animating = _state == State::ANIMATING || _state == State::BATTLE;
     ti.promotion_menu = _state == State::PROMOTION;
     ti.pause_menu = _state == State::PAUSE;
     ti.encounter = uint32_t(int32_t(_g.setup.encounter));

@@ -171,9 +171,23 @@ namespace
     constexpr int banner_sprites = 8;     // 32 px frames from x = 4 to x = 236 (the last two overlap)
 }
 
-bool ToastBanner::update()
+bool ToastBanner::update(bool allowed)
 {
     Globals& g = globals();
+
+    if(! allowed)
+    {
+        if(_frames > 0)
+        {
+            g.toasts |= uint64_t(1) << _id;
+            _frames = 0;
+            _banner.clear();
+            _text.clear();
+            test_interface().toast = 0;
+        }
+
+        return false;
+    }
 
     if(_frames > 0)
     {
@@ -215,6 +229,7 @@ bool ToastBanner::update()
     }
 
     g.toasts &= ~(uint64_t(1) << id);
+    _id = id;
     _banner.clear();
     _text.clear();
 

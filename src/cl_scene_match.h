@@ -6,10 +6,12 @@
 #define CL_SCENE_MATCH_H
 
 #include "bn_fixed_point.h"
+#include "bn_optional.h"
 #include "bn_sprite_ptr.h"
 #include "bn_string.h"
 #include "bn_vector.h"
 
+#include "cl_battle.h"
 #include "cl_board_view.h"
 #include "cl_campaign.h"
 #include "cl_progress.h"
@@ -45,7 +47,8 @@ private:
         HELP,           // help pages or a rule card
         CONFIRM,        // yes / no question
         GAME_OVER,
-        LESSON          // tutorial: instruction pages before the task
+        LESSON,         // tutorial: instruction pages before the task
+        BATTLE          // a capture shown as a duel (the board fades out, the duel plays, the board returns)
     };
 
     enum class Confirm : uint8_t
@@ -90,6 +93,8 @@ private:
         int mover_sq = NO_SQUARE;
         int partner_sq = NO_SQUARE;
         int victim_sq = NO_SQUARE;
+        bool battle = false;            // a battle scene follows the board animation
+        int8_t deferred_sound = -1;     // result sound held back until the battle scene is over
     };
 
     Globals& _g;
@@ -146,6 +151,12 @@ private:
     bn::string<16> _opponent_label;     // short opponent name in scenarios
     int _captured[2][7] = {};
     Move _last_move;
+    EffectLayer _effects;               // spell particles on the board
+    bn::optional<bn::sprite_ptr> _spell_sprite;     // afterimage, rune or royal seal of the spell being shown
+    bool _spell_dimmed = false;         // Royal Escape darkened the background
+    int _battle_fade = 0;               // frames left of the board fading out before a duel
+    int _fade_in = 0;                   // frames left of the board fading back in after a duel
+    bn::optional<BattleScene> _battle;  // declared last: it draws on _panel until it is destroyed
 
     // flow
     void _start_match();
@@ -180,6 +191,11 @@ private:
     void _update_animation();
     void _finish_animation();
     [[nodiscard]] int _animation_length(const Move& move) const;
+    [[nodiscard]] bool _battle_wanted(const ActionInfo& info) const;
+    void _update_battle();
+    void _end_battle();
+    void _update_fade_in();
+    void _update_spell(bn::fixed previous, bn::fixed t, bn::sprite_ptr* mover);
 
     // AI
     void _update_ai();

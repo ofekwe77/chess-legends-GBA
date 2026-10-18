@@ -72,13 +72,15 @@ private:
 class ToastBanner
 {
 public:
-    // Returns true while a banner is shown.
-    bool update();
+    // Returns true while a banner is shown. While `allowed` is false (a battle scene) no banner starts, and one
+    // being shown is withdrawn and queued again, so it is seen in full later.
+    bool update(bool allowed = true);
 
 private:
     bn::vector<bn::sprite_ptr, 8> _banner;
     bn::vector<bn::sprite_ptr, 24> _text;
     int _frames = 0;
+    int _id = 0;
 
     void _place(int y);
 };

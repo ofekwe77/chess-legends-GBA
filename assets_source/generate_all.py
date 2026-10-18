@@ -14,7 +14,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, 'gfx'))
 
 GENERATORS = ['gen_fonts', 'gen_font_big', 'gen_pieces', 'gen_board', 'gen_ui', 'gen_icons', 'gen_portraits',
-              'gen_backdrops', 'gen_effects', 'gen_audio']
+              'gen_backdrops', 'gen_effects', 'gen_battle', 'gen_logo', 'gen_audio']
 
 
 def main():

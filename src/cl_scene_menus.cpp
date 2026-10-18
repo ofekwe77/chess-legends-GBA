@@ -14,6 +14,7 @@
 #include "cl_text.h"
 
 #include "bn_sprite_items_crown.h"
+#include "bn_regular_bg_items_title_logo.h"
 
 namespace cl::gba
 {
@@ -28,14 +29,15 @@ class TitleScene final : public Scene
 public:
     TitleScene() :
         _backdrop(create_backdrop(Backdrop::TITLE)),
-        _crown(bn::sprite_items::crown.create_sprite(0, 26 - 80)),
+        _logo(bn::regular_bg_items::title_logo.create_bg(8, 48)),
+        _crown(bn::sprite_items::crown.create_sprite(0, 20 - 80)),
         _stars(ParticleKind::STARS, 14, 1, 31)
     {
         set_current_scene(SceneId::TITLE);
         play_music(Music::TITLE);
+        _logo.set_priority(2);      // the logo art (assets_source/gen_logo.py) above the backdrop
         _crown.set_bg_priority(0);
-        print_big(_text, 120, 66, "CHESS LEGENDS", TitleColor::GOLD, Align::CENTER);
-        print_big(_text, 120, 88, "ARCANE WARS", TitleColor::ARCANE, Align::CENTER);
+        print_big(_text, 120, 95, "ARCANE WARS", TitleColor::ARCANE, Align::CENTER);
 
         if(globals().load_notice)
         {
@@ -56,7 +58,7 @@ public:
 
             if((_frames & 32) == 0)
             {
-                print(_press, 120, 116, "PRESS START", TextColor::WHITE, Align::CENTER);
+                print(_press, 120, 119, "PRESS START", TextColor::WHITE, Align::CENTER);
             }
         }
 
@@ -73,6 +75,7 @@ public:
 
 private:
     bn::regular_bg_ptr _backdrop;
+    bn::regular_bg_ptr _logo;
     bn::sprite_ptr _crown;
     ParticleField _stars;
     bn::vector<bn::sprite_ptr, 40> _text;

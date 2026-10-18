@@ -32,7 +32,7 @@ def line(c, x0, y0, x1, y1, color, width=1):
         c.thick_line(int(x0), int(y0), int(x1), int(y1), color, width)
 
 
-def arm(c, shoulder, angle, length, color, width=3):
+def arm(c, shoulder, angle, length, color, width=4):
     """Draws an arm from the shoulder at `angle` degrees (0 = forward / right, 90 = up); returns the hand."""
     rad = math.radians(angle)
     hand = (shoulder[0] + math.cos(rad) * length, shoulder[1] - math.sin(rad) * length)
@@ -51,8 +51,8 @@ def weapon(c, hand, angle, length, color, tip=None, width=2):
 
 def legs(c, hip_x, hip_y, stance, color, shade):
     """stance: spread of the feet; the back leg is shaded."""
-    line(c, hip_x - 2, hip_y, hip_x - 4 - stance, GROUND - 1, shade, 3)
-    line(c, hip_x + 2, hip_y, hip_x + 4 + stance, GROUND - 1, color, 3)
+    line(c, hip_x - 2, hip_y, hip_x - 4 - stance, GROUND - 1, shade, 4)
+    line(c, hip_x + 2, hip_y, hip_x + 4 + stance, GROUND - 1, color, 4)
     c.hline(int(hip_x - 6 - stance), int(hip_x - 2 - stance), GROUND - 1, OUT)
     c.hline(int(hip_x + 3 + stance), int(hip_x + 7 + stance), GROUND - 1, OUT)
 
@@ -94,14 +94,13 @@ def torso(c, x, y, w, h, color, shade, trim=None):
         c.hline(int(x - w // 2), int(x + w // 2 - 1), int(y + h - 2), trim)
 
 
-def soldier(frame):
-    c = Canvas(64, 64)
+def soldier(c, frame):
     lean = {IDLE: 0, BREATH: 0, WINDUP: -2, STRIKE: 5, HURT: -4, DEFEAT: -6}[frame]
     bob = 1 if frame == BREATH else 0
     x = 26 + lean
     hip = 45 + bob
     legs(c, 26 + lean // 2, hip, 3 if frame == STRIKE else 1, B1, B0)
-    torso(c, x, 32 + bob, 12, 14, B2, B0, A1)
+    torso(c, x, 32 + bob, 14, 14, B2, B0, A1)
     # shield on the front arm
     c.ellipse(x + 7, 39 + bob, 4, 7, S1)
     c.ellipse(x + 8, 39 + bob, 2, 5, S0)
@@ -112,11 +111,11 @@ def soldier(frame):
     weapon(c, hand, blade_angle, 10, B3, width=2)
     c.set(int(hand[0]), int(hand[1]), A1)
     head(c, x + 1, 25 + bob, 6, 'soldier')
-    return c
 
 
-def cavalry(frame):
-    c = Canvas(64, 64)
+def cavalry(c, frame):
+    if frame == DEFEAT:
+        c = c.shifted(2, 5)         # the champion slumps: the whole figure drops
     rear = frame == WINDUP
     gallop = frame == STRIKE
     tilt = -3 if frame == HURT else 0
@@ -140,47 +139,38 @@ def cavalry(frame):
     c.hline(hx - 12, hx + 10, hy + 3, A1)
     # rider
     rx, ry = hx - 2 + (3 if gallop else 0), hy - 16
-    torso(c, rx, ry, 10, 10, B2, B0)
+    torso(c, rx, ry, 12, 10, B2, B0)
     head(c, rx + 1, ry - 6, 5, 'knight')
     angle = {IDLE: 70, BREATH: 70, WINDUP: 110, STRIKE: 5, HURT: 120, DEFEAT: 160}[frame]
     hand = arm(c, (rx, ry + 3), angle - 40, 6, B2, 2)
     weapon(c, hand, angle - 60 if frame == STRIKE else angle, 22, B3, (A2, 1), 2)
-    if frame == DEFEAT:
-        # the champion slumps: drop the whole figure
-        moved = Canvas(64, 64)
-        moved.blit(c, 2, 5)
-        return moved
-    return c
 
 
-def mystic(frame):
-    c = Canvas(64, 64)
+def mystic(c, frame):
     lean = {IDLE: 0, BREATH: 0, WINDUP: -2, STRIKE: 3, HURT: -4, DEFEAT: -3}[frame]
     bob = 1 if frame == BREATH else 0
     x = 28 + lean
     # long robe (no visible legs)
-    c.polygon([(x - 8, GROUND - 1), (x - 5, 30 + bob), (x + 5, 30 + bob), (x + 9, GROUND - 1)], B2)
-    c.polygon([(x + 3, 30 + bob), (x + 5, 30 + bob), (x + 9, GROUND - 1), (x + 5, GROUND - 1)], B0)
+    c.polygon([(x - 10, GROUND - 1), (x - 6, 30 + bob), (x + 6, 30 + bob), (x + 10, GROUND - 1)], B2)
+    c.polygon([(x + 3, 30 + bob), (x + 6, 30 + bob), (x + 10, GROUND - 1), (x + 5, GROUND - 1)], B0)
     c.vline(x, 32 + bob, GROUND - 2, A1)
     c.hline(x - 7, x + 8, GROUND - 2, A1)
     head(c, x + 1, 24 + bob, 6, 'mitre')
     # staff: raised for the wind-up, pointed for the strike
     angle = {IDLE: 80, BREATH: 80, WINDUP: 100, STRIKE: 20, HURT: 120, DEFEAT: 150}[frame]
     hand = arm(c, (x + 2, 33 + bob), 30 if frame != STRIKE else 10, 6, B2)
-    top = weapon(c, (hand[0], hand[1] + 10), angle, 28, A0, None, 2)
+    top = weapon(c, (hand[0], hand[1] + 10), angle, 28 if frame != STRIKE else 20, A0, None, 2)
     c.circle(int(top[0]), int(top[1]), 3, S1 if frame != WINDUP else GEM)
     c.set(int(top[0]), int(top[1]), RIM)
-    return c
 
 
-def guardian(frame):
-    c = Canvas(64, 64)
+def guardian(c, frame):
     lean = {IDLE: 0, BREATH: 0, WINDUP: -3, STRIKE: 4, HURT: -3, DEFEAT: -2}[frame]
     bob = 1 if frame == BREATH else 0
     drop = 6 if frame == DEFEAT else 0
-    x = 27 + lean
+    x = 30 + lean
     legs(c, x, 46 + bob + drop, 3, B1, B0)
-    torso(c, x, 28 + bob + drop, 18, 19, B1, B0, A0)
+    torso(c, x, 28 + bob + drop, 20, 19, B1, B0, A0)
     c.hline(x - 9, x + 8, 30 + bob + drop, B3)                          # pauldron rims
     head(c, x + 1, 21 + bob + drop, 6, 'great')
     # tower shield in front
@@ -188,18 +178,16 @@ def guardian(frame):
     c.rect(x + 8, 28 + bob + drop, 6, 22, S1)
     c.vline(x + 11, 29 + bob + drop, 48 + bob + drop, A1)
     # great hammer
-    angle = {IDLE: 100, BREATH: 98, WINDUP: 160, STRIKE: 10, HURT: 150, DEFEAT: 210}[frame]
+    angle = {IDLE: 100, BREATH: 98, WINDUP: 125, STRIKE: 10, HURT: 130, DEFEAT: 235}[frame]
     hand = arm(c, (x - 5, 32 + bob + drop), angle, 9, B1, 4)
     end = weapon(c, hand, angle, 14, A0, None, 2)
     rad = math.radians(angle + 90)
     hx, hy = end
     c.thick_line(int(hx - math.cos(rad) * 5), int(hy + math.sin(rad) * 5), int(hx + math.cos(rad) * 5),
                  int(hy - math.sin(rad) * 5), B2, 5)
-    return c
 
 
-def sorceress(frame):
-    c = Canvas(64, 64)
+def sorceress(c, frame):
     lean = {IDLE: 0, BREATH: 0, WINDUP: -1, STRIKE: 2, HURT: -4, DEFEAT: -2}[frame]
     bob = 1 if frame == BREATH else 0
     x = 28 + lean
@@ -208,7 +196,7 @@ def sorceress(frame):
     c.polygon([(x + 2, 32 + bob), (x + 4, 32 + bob), (x + 12, GROUND - 1), (x + 6, GROUND - 1)], S0)
     for gx in range(x - 10, x + 12, 4):
         c.set(gx, GROUND - 2, A2)
-    torso(c, x, 28 + bob, 8, 7, B2, B0, A1)
+    torso(c, x, 28 + bob, 10, 7, B2, B0, A1)
     head(c, x + 1, 22 + bob, 6, 'tiara')
     for i in range(6):
         c.set(x - 5, 22 + bob + i, A0)                                   # hair falling down the back
@@ -217,11 +205,9 @@ def sorceress(frame):
     hand = arm(c, (x + 2, 30 + bob), angle, 9, B3, 2)
     wand_end = weapon(c, hand, angle + 10, 7, A1, None, 1)
     c.circle(int(wand_end[0]), int(wand_end[1]), 2 if frame in (WINDUP, STRIKE) else 1, GEM)
-    return c
 
 
-def sovereign(frame):
-    c = Canvas(64, 64)
+def sovereign(c, frame):
     lean = {IDLE: 0, BREATH: 0, WINDUP: -2, STRIKE: 4, HURT: -3, DEFEAT: -2}[frame]
     bob = 1 if frame == BREATH else 0
     x = 27 + lean
@@ -229,24 +215,69 @@ def sovereign(frame):
     c.polygon([(x - 6, 29 + bob), (x - 13, GROUND - 1), (x + 1, GROUND - 1), (x + 2, 29 + bob)], A0)
     c.polygon([(x - 6, 29 + bob), (x - 11, GROUND - 3), (x - 8, GROUND - 3)], A1)
     legs(c, x, 46 + bob, 2, B1, B0)
-    torso(c, x, 29 + bob, 13, 17, B2, B0, A1)
+    torso(c, x, 29 + bob, 15, 17, B2, B0, A1)
     c.vline(x, 30 + bob, 44 + bob, A2)
     head(c, x + 1, 22 + bob, 6, 'crown')
     angle = {IDLE: 70, BREATH: 68, WINDUP: 130, STRIKE: 0, HURT: 150, DEFEAT: 200}[frame]
     hand = arm(c, (x + 3, 32 + bob), angle - 20, 8, B2)
     weapon(c, hand, angle, 16, B3, None, 2)
     c.hline(int(hand[0]) - 2, int(hand[0]) + 2, int(hand[1]), A1)       # cross-guard
-    return c
 
 
 CLASSES = [('soldier', soldier), ('cavalry', cavalry), ('mystic', mystic), ('guardian', guardian),
            ('sorceress', sorceress), ('sovereign', sovereign)]
 
+class FigureCanvas:
+    """The drawing calls of the figure builders, forwarded to a canvas with an offset (a slumping figure)."""
+
+    def __init__(self, canvas, dx=0, dy=0):
+        self.canvas = canvas
+        self.dx = dx
+        self.dy = dy
+
+    def shifted(self, dx, dy):
+        return FigureCanvas(self.canvas, self.dx + dx, self.dy + dy)
+
+    def set(self, x, y, color):
+        self.canvas.set(int(x) + self.dx, int(y) + self.dy, color)
+
+    def hline(self, x0, x1, y, color):
+        self.canvas.hline(int(x0) + self.dx, int(x1) + self.dx, int(y) + self.dy, color)
+
+    def vline(self, x, y0, y1, color):
+        self.canvas.vline(int(x) + self.dx, int(y0) + self.dy, int(y1) + self.dy, color)
+
+    def rect(self, x, y, w, h, color):
+        self.canvas.rect(int(x) + self.dx, int(y) + self.dy, w, h, color)
+
+    def circle(self, x, y, r, color, filled=True):
+        self.canvas.circle(int(x) + self.dx, int(y) + self.dy, r, color, filled)
+
+    def ellipse(self, x, y, rx, ry, color, filled=True):
+        self.canvas.ellipse(int(x) + self.dx, int(y) + self.dy, rx, ry, color, filled)
+
+    def polygon(self, points, color):
+        self.canvas.polygon([(int(x) + self.dx, int(y) + self.dy) for x, y in points], color)
+
+    def line(self, x0, y0, x1, y1, color):
+        self.canvas.line(int(x0) + self.dx, int(y0) + self.dy, int(x1) + self.dx, int(y1) + self.dy, color)
+
+    def thick_line(self, x0, y0, x1, y1, color, thickness=2):
+        self.canvas.thick_line(int(x0) + self.dx, int(y0) + self.dy, int(x1) + self.dx, int(y1) + self.dy, color,
+                               thickness)
+
+
+def build_figure(builder, frame):
+    """One 64x64 frame of a class."""
+    target = Canvas(64, 64)
+    builder(FigureCanvas(target), frame)
+    return target
+
 
 def sheet_for(builder):
     sheet = Canvas(64, 64 * 6)
     for frame in range(6):
-        figure = builder(frame)
+        figure = build_figure(builder, frame)
         figure.outline(OUT)
         sheet.blit(figure, 0, frame * 64)
     return sheet

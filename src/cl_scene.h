@@ -1,0 +1,67 @@
+// CHESS LEGENDS: ARCANE WARS - scenes, per-frame services and input helpers.
+#ifndef CL_SCENE_H
+#define CL_SCENE_H
+
+#include "bn_optional.h"
+#include "bn_unique_ptr.h"
+
+#include "cl_globals.h"
+
+namespace cl::gba
+{
+
+class Scene
+{
+public:
+    virtual ~Scene() = default;
+
+    // Runs one frame of logic; returns the next scene to switch to, if any.
+    [[nodiscard]] virtual bn::optional<SceneId> update() = 0;
+};
+
+[[nodiscard]] bn::unique_ptr<Scene> create_scene(SceneId id);
+
+// Ends the current frame: refreshes the test interface and calls bn::core::update().
+void frame_end();
+
+// Current scene id (mirrored to the test interface).
+void set_current_scene(SceneId id);
+
+// Directional input with auto-repeat (cursor movement in menus and on the board).
+class RepeatInput
+{
+public:
+    void update();
+
+    [[nodiscard]] bool left() const
+    {
+        return _fired & 1;
+    }
+
+    [[nodiscard]] bool right() const
+    {
+        return _fired & 2;
+    }
+
+    [[nodiscard]] bool up() const
+    {
+        return _fired & 4;
+    }
+
+    [[nodiscard]] bool down() const
+    {
+        return _fired & 8;
+    }
+
+private:
+    int _held_frames[4] = {};
+    int _fired = 0;
+};
+
+// Screen fades (blocking helpers used between scenes).
+void fade_out(int frames = 16);
+void fade_in(int frames = 16);
+
+}
+
+#endif

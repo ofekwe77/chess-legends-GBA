@@ -1,0 +1,36 @@
+# Smoke test: boot, title, main menu, Arcane setup, start a match against the computer.
+frames 60
+shot title
+wait scene == 2 120
+tap START
+wait scene == 3 120
+frames 20
+shot main_menu
+tap A
+wait scene == 4 120
+frames 20
+shot setup
+tap A
+wait scene == 5 120
+wait match_active == 1 120
+frames 30
+shot match_start
+expect side_to_move == 0
+expect mana_white == 1
+expect mana_black == 0
+# Select the e2 pawn (cursor starts there), move it two squares up and confirm.
+tap A
+frames 4
+shot selected
+expect selected_square == 20
+tap UP
+tap UP
+tap A
+wait ui_state == 6 120
+shot ai_thinking
+wait side_to_move == 0 3000
+wait ui_state == 0 600
+frames 10
+shot after_ai
+expect plies == 2
+print mana_white mana_black ai_nodes ai_depth ai_frames

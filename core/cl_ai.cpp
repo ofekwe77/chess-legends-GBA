@@ -150,9 +150,9 @@ AiProfile make_ai_profile(const AiSettings& settings)
     EvalProfile& eval = profile.eval;
 
     // ---- difficulty: search budget, evaluation depth, controlled imperfection ----
-    // Budgets are node counts calibrated on the console (about 1,000-1,500 nodes per second while the interface
-    // keeps animating): roughly 0.3 s, 1.3 s, 3 s and 6 s per move. Node budgets keep the AI deterministic, so the
-    // host simulator reproduces console play exactly.
+    // Budgets are node counts. Measured on the console with the interface at 60 fps (tests/emu/perf.txt, an Arcane
+    // middlegame): about 0.4 s, 2 s, 5 s and 8 s per move. Node budgets keep the AI deterministic, so the host
+    // simulator reproduces console play exactly.
     switch(settings.difficulty)
     {
     case Difficulty::APPRENTICE:

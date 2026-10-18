@@ -1,5 +1,5 @@
 // CHESS LEGENDS: ARCANE WARS - search setup and root iteration (cold code; the node search lives in
-// cl_search.bn_iwram.cpp).
+// cl_search_nodes.cpp).
 #include "cl_search.h"
 
 namespace cl

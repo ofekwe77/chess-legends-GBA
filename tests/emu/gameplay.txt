@@ -1,0 +1,149 @@
+# Representative games (MD.txt 115): Classic Chess against the computer, stalemate, checkmate and rematch, campaign
+# progress with a lesson and a boss victory, and a story defeat followed by a retry.
+# Packed moves: from | to << 7 | kind << 21 | capture << 25 (0x88 squares).
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
+wait scene == 2 120
+frames 30
+cmd 11
+cmd 4 3
+
+# Classic Chess, human White against the Knight difficulty: three moves, the computer answers each.
+cmd 2 0 1 1 0
+wait match_active == 1 200
+wait ui_state == 0 200
+expect mode == 0
+expect rules_arcane == 0
+# 1. e4
+cmd 3 4200980
+wait side_to_move == 1 60
+wait side_to_move == 0 3000
+wait ui_state == 0 300
+# 2. Nf3
+cmd 3 4742
+wait side_to_move == 1 60
+wait side_to_move == 0 3000
+wait ui_state == 0 300
+# 3. Nc3
+cmd 3 4353
+wait side_to_move == 1 60
+wait side_to_move == 0 3000
+wait ui_state == 0 300
+frames 10
+shot classic_after_three_moves
+expect plies == 6
+expect result == 0
+print ai_nodes ai_depth ai_frames
+# R cycles the side panel: piece (the knight under the cursor), threats on its square, the game summary.
+tap R
+frames 4
+shot panel_threats
+tap R
+frames 4
+shot panel_game
+tap R
+frames 4
+
+# The Arcane panel: the piece under the cursor with its ability, icon and cost.
+cmd 2 1 1 1 0
+wait plies == 0 200
+wait ui_state == 0 200
+frames 10
+shot panel_piece_arcane
+
+# Stalemate (test position 0, classic): Qg5-g6 leaves the black king without a move, not in check.
+cmd 6 0 0 1 0
+wait plies == 0 200
+wait ui_state == 0 200
+cmd 3 11078
+wait result == 3 120
+expect reason == 3
+frames 30
+shot stalemate
+
+# Checkmate (test position 1, classic): Rd1-d8 mates; REMATCH starts the same position again.
+cmd 6 1 0 1 0
+wait plies == 0 200
+wait ui_state == 0 200
+cmd 3 14723
+wait result == 1 120
+expect reason == 1
+wait ui_state == 12 120
+frames 40
+shot checkmate_rematch_menu
+tap A
+wait plies == 0 120
+wait ui_state == 0 120
+expect result == 0
+
+# Campaign progress: the first lesson won (the computer resigns), the victory dialogue, the encounter cleared.
+cmd 9 0
+wait mode == 2 200
+wait encounter == 0 200
+wait ui_state == 0 200
+expect campaign_cleared == 0
+cmd 12
+wait result == 1 60
+expect reason == 2
+wait ui_state == 12 120
+expect campaign_cleared == 1
+frames 40
+shot lesson_victory
+tap A
+wait scene == 7 200
+frames 30
+shot lesson_victory_dialogue
+
+# Defeat and retry: resign the promotion trial from the pause menu, then RETRY restarts it.
+cmd 9 1
+wait encounter == 1 200
+wait scene == 5 200
+wait ui_state == 0 200
+expect moves_left == 9
+tap START
+frames 10
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+frames 10
+tap UP
+tap A
+wait result == 2 120
+wait ui_state == 12 120
+frames 40
+shot story_defeat
+expect campaign_cleared == 1
+tap A
+wait plies == 0 120
+wait ui_state == 0 120
+expect result == 0
+expect moves_left == 9
+shot story_retry
+# The retried trial is won (the computer resigns).
+cmd 12
+wait result == 1 60
+wait ui_state == 12 120
+expect campaign_cleared == 3
+expect unlocked_worlds == 1
+
+# Boss victory: the Emerald Warden resigns; every encounter of the first kingdom is cleared, the second opens.
+cmd 9 2
+wait encounter == 2 200
+wait scene == 5 200
+wait ui_state == 0 200
+cmd 12
+wait result == 1 60
+wait ui_state == 12 120
+expect campaign_cleared == 7
+expect unlocked_worlds == 2
+frames 40
+shot boss_victory
+tap A
+wait scene == 7 200
+frames 30
+shot boss_victory_dialogue
+print campaign_cleared unlocked_worlds achievements_lo

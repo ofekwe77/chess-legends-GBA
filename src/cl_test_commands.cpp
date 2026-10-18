@@ -11,6 +11,13 @@ namespace cl::gba
 namespace
 {
     uint32_t pending_move = 0;
+    bool pending_resignation = false;
+
+    // Built-in test positions (CL_TI_CMD_SETUP_POSITION).
+    constexpr const char* test_positions[] = {
+        "7k/5K2/8/6Q1/8/8/8/8 w - - 0 1",              // 0: Qg5-g6 stalemates
+        "6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1",       // 1: Rd1-d8 mates
+    };
 
     void unlock_everything()
     {
@@ -121,6 +128,23 @@ bn::optional<SceneId> process_test_commands()
         }
         break;
 
+    case CL_TI_CMD_SETUP_POSITION:
+        if(ti.arg0 < uint32_t(sizeof(test_positions) / sizeof(test_positions[0])))
+        {
+            setup = MatchSetup();
+            setup.mode = ti.arg1 ? MatchMode::ARCANE : MatchMode::CLASSIC;
+            setup.arcane = ti.arg1 != 0;
+            setup.human_mask = uint8_t(ti.arg2 ? ti.arg2 & 3 : 1);
+            setup.difficulty = Difficulty(ti.arg3 & 3);
+            setup.test_fen = test_positions[ti.arg0];
+            next = SceneId::MATCH;
+        }
+        break;
+
+    case CL_TI_CMD_OPPONENT_RESIGNS:
+        pending_resignation = true;
+        break;
+
     case CL_TI_CMD_WIPE_SAVE:
         erase_all_saves();
         g.profile = Profile();
@@ -141,6 +165,13 @@ uint32_t take_test_move()
     const uint32_t move = pending_move;
     pending_move = 0;
     return move;
+}
+
+bool take_test_resignation()
+{
+    const bool resignation = pending_resignation;
+    pending_resignation = false;
+    return resignation;
 }
 
 }

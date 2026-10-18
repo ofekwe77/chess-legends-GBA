@@ -330,9 +330,21 @@ void MatchScene::_setup_mode()
     default:
         if(! resume)
         {
-            _game.start(setup.arcane ? RuleSet::arcane_rules() : RuleSet::classic());
+            const RuleSet rules = setup.arcane ? RuleSet::arcane_rules() : RuleSet::classic();
+
+            if(setup.test_fen)
+            {
+                // Automated tests only (CL_TI_CMD_SETUP_POSITION): a quick match from a given position.
+                [[maybe_unused]] const FenError error = _game.setup(setup.test_fen, rules, false);
+                CL_ASSERT(error == FenError::NONE);
+            }
+            else
+            {
+                _game.start(rules);
+            }
         }
 
+        fen_start = setup.test_fen != nullptr;
         setup.node_scale = 100;
         break;
     }
@@ -778,6 +790,14 @@ void MatchScene::_suspend_and_quit()
 bn::optional<SceneId> MatchScene::update()
 {
     _input.update();
+
+    // Automated tests may make the computer resign (the same path as a resignation from the pause menu).
+    if(take_test_resignation() && ! _game.over() && _g.setup.human_mask != 3 &&
+       (_state == State::HUMAN || _state == State::SELECTED || _state == State::MAGIC || _state == State::AI))
+    {
+        _game.resign(opposite(_player));
+        _begin_turn();
+    }
 
     switch(_state)
     {

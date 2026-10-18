@@ -18,6 +18,9 @@ namespace cl::gba
 // A move posted with CL_TI_CMD_PLAY_MOVE (packed Move data), consumed by the match scene; 0 when none.
 [[nodiscard]] uint32_t take_test_move();
 
+// True once after CL_TI_CMD_OPPONENT_RESIGNS (consumed by the match scene).
+[[nodiscard]] bool take_test_resignation();
+
 }
 
 #endif

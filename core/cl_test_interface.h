@@ -50,12 +50,13 @@ enum cl_ti_command
     CL_TI_CMD_PLAY_MOVE = 3,         /* arg0: packed move data (must be legal) */
     CL_TI_CMD_SET_ANIMATIONS = 4,    /* arg0: animation mode */
     CL_TI_CMD_GOTO_SCENE = 5,        /* arg0: scene id */
-    CL_TI_CMD_SETUP_POSITION = 6,    /* arg0: built-in test position index */
+    CL_TI_CMD_SETUP_POSITION = 6,    /* arg0: built-in test position, arg1: arcane, arg2: human mask, arg3: level */
     CL_TI_CMD_UNLOCK_ALL = 7,        /* unlock every campaign / gallery item (test only) */
     CL_TI_CMD_RESET_STATS = 8,       /* reset CPU statistics */
     CL_TI_CMD_START_ENCOUNTER = 9,   /* arg0: encounter index */
     CL_TI_CMD_START_CHALLENGE = 10,  /* arg0: challenge index */
-    CL_TI_CMD_WIPE_SAVE = 11         /* format the save memory (test only) */
+    CL_TI_CMD_WIPE_SAVE = 11,        /* format the save memory (test only) */
+    CL_TI_CMD_OPPONENT_RESIGNS = 12  /* the computer side of the running match resigns (test only) */
 };
 
 #endif

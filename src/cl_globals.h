@@ -66,6 +66,7 @@ struct MatchSetup
     bool resume_suspended = false;   // the game and scenario state were restored from a suspended match
     bool last_success = false;       // outcome of the last finished scenario match (story / challenge / gauntlet)
     bool result_ready = false;       // last_success belongs to the match just left (false after quitting it)
+    const char* test_fen = nullptr;  // quick match from this position instead of the start (test commands only)
 };
 
 // What the story dialogue scene shows next (set by the story map, the match scene and the gauntlet).

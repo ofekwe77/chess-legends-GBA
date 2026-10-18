@@ -249,11 +249,13 @@ private:
         case MenuItem::CLASSIC:
             setup.mode = MatchMode::CLASSIC;
             setup.arcane = false;
+            setup.test_fen = nullptr;
             return SceneId::MATCH_SETUP;
 
         case MenuItem::ARCANE:
             setup.mode = MatchMode::ARCANE;
             setup.arcane = true;
+            setup.test_fen = nullptr;
             return SceneId::MATCH_SETUP;
 
         case MenuItem::CHALLENGES:

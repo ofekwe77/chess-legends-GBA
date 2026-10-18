@@ -24,9 +24,12 @@ JOBS=${JOBS:-8}
 HOSTCXX=${HOSTCXX:-/ucrt64/bin/g++}
 export PATH="/ucrt64/bin:$PATH"
 HOST_FLAGS="-std=c++23 -O2 -g -Wall -Wextra -Wshadow -Wpedantic -DCL_HOST=1 -Icore"
+if [ -z "$PYTHON" ]; then
+    if command -v python3 >/dev/null 2>&1; then PYTHON=python3; else PYTHON="py -3.12"; fi
+fi
 
 cmd_assets() {
-    python3 assets_source/generate_all.py
+    $PYTHON assets_source/generate_all.py
 }
 
 cmd_rom() {
@@ -62,6 +65,7 @@ cmd_validate() {
     mkdir -p build_host
     "$HOSTCXX" $HOST_FLAGS core/*.cpp tools/validation/validate.cpp -static -o build_host/validate.exe
     ./build_host/validate.exe "$@"
+    $PYTHON tools/check_glyphs.py
 }
 
 cmd_harness() {

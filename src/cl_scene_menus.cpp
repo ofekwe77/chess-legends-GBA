@@ -559,6 +559,8 @@ bn::unique_ptr<Scene> create_scene(SceneId id)
     case SceneId::MATCH: return make_match_scene();
     case SceneId::STORY_MAP: return make_story_map_scene();
     case SceneId::STORY_DIALOGUE: return make_story_dialogue_scene();
+    case SceneId::CHALLENGES: return make_challenges_scene();
+    case SceneId::GAUNTLET: return make_gauntlet_scene();
     default: return make_main_menu_scene();
     }
 }

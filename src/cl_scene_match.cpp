@@ -13,6 +13,7 @@
 #include "cl_panel_tiles.h"
 #include "cl_storage.h"
 #include "cl_tables.h"
+#include "cl_test_commands.h"
 #include "cl_text.h"
 #include "cl_text_layout.h"
 
@@ -299,6 +300,7 @@ void MatchScene::_start_match()
 {
     MatchSetup& setup = _g.setup;
     _setup_mode();
+    setup.result_ready = false;
     _result_recorded = false;
     _objective_success = false;
     _medal = 0;
@@ -466,6 +468,7 @@ void MatchScene::_record_result()
 
     _objective_success = success;
     _g.setup.last_success = success;
+    _g.setup.result_ready = true;
     _recorder.on_finish(_game, success);
     _g.toasts |= _recorder.commit(profile);
 
@@ -669,6 +672,19 @@ void MatchScene::_move_cursor()
 
 void MatchScene::_update_human()
 {
+    // Automated tests may post an action; it goes through the same legal-action path as a player's move.
+    if(const uint32_t posted = take_test_move())
+    {
+        for(int i = 0; i < _legal.count; ++i)
+        {
+            if(_legal.moves[i].data() == posted)
+            {
+                _execute(_legal.moves[i]);
+                return;
+            }
+        }
+    }
+
     if(bn::keypad::start_pressed())
     {
         _open_pause();
@@ -2447,7 +2463,7 @@ void MatchScene::_set_status()
     if(_scenario && _tracker.spec().limit)
     {
         const int left = _tracker.moves_left();
-        stream << objective_label(_tracker.spec()) << " · " << left << (left == 1 ? " move left" : " moves left");
+        stream << objective_label(_tracker.spec()) << ": " << left << (left == 1 ? " move left" : " moves left");
         print(_status_text, 4, 0, text, TextColor::GOLD);
         return;
     }

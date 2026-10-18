@@ -29,6 +29,9 @@ void frame_end();
 // Current scene id (mirrored to the test interface).
 void set_current_scene(SceneId id);
 
+// Restarts the CPU usage peak measurement (test interface).
+void reset_cpu_statistics();
+
 // Directional input with auto-repeat (cursor movement in menus and on the board).
 class RepeatInput
 {

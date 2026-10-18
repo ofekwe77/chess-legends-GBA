@@ -36,6 +36,23 @@ enum class Backdrop : uint8_t
 // 64x64 portrait with three frames: Expression::NEUTRAL, INTENSE, DEFEATED.
 [[nodiscard]] const bn::sprite_item& portrait_item(Character character);
 
+// A 64x64 position preview (8 px squares, mini piece sprites); (x, y) is its top-left corner on screen.
+class MiniBoard
+{
+public:
+    MiniBoard(int x, int y, int bg_priority = 0);
+
+    void show(const Position& pos);
+    void set_visible(bool visible);
+
+private:
+    bn::sprite_ptr _board;
+    bn::vector<bn::sprite_ptr, 32> _pieces;
+    int _x;
+    int _y;
+    int _bg_priority;
+};
+
 enum class ParticleKind : uint8_t
 {
     LEAVES,         // drifting down and swaying

@@ -1,0 +1,76 @@
+# Challenge mode and the boss gauntlet on a fresh save.
+frames 60
+wait scene == 2 120
+cmd 11
+tap START
+wait scene == 3 120
+frames 20
+# Main menu: STORY MODE -> three rows down is CHALLENGES.
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+wait scene == 8 200
+frames 30
+shot challenge_list
+expect menu_index == 0
+expect challenge_medals == 0
+tap A
+wait scene == 5 200
+wait match_active == 1 100
+frames 30
+shot challenge_1
+expect mode == 3
+expect challenge == 0
+expect moves_left == 3
+# First Blood: Rd1-d8 mate (packed move: from d1 = 0x03, to d8 = 0x73, quiet).
+cmd 3 14723
+wait result == 1 300
+frames 20
+shot challenge_solved
+expect reason == 1
+# Gold medal (2 bits = 3 for challenge 0).
+expect challenge_medals == 3
+# Puzzle Solver is announced.
+expect toast != 0
+# NEXT CHALLENGE starts challenge 2.
+frames 160
+tap A
+wait challenge == 1 120
+wait match_active == 1 100
+frames 30
+shot challenge_2
+expect moves_left == 4
+
+# Boss gauntlet: unlock it (test command), open a new run, lose the first battle by resigning.
+cmd 7
+cmd 5 9
+wait scene == 9 200
+frames 30
+shot gauntlet_intro
+tap A
+wait scene == 5 200
+wait match_active == 1 100
+frames 30
+shot gauntlet_battle
+expect mode == 4
+expect gauntlet_stage == 0
+expect mana_white == 1
+tap START
+frames 10
+tap DOWN
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+frames 10
+shot resign_confirm
+tap UP
+tap A
+wait result == 2 200
+frames 20
+shot gauntlet_defeat
+tap A
+wait scene == 9 200
+frames 30
+shot gauntlet_over

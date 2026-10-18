@@ -6,6 +6,7 @@
 
 #include "cl_scene.h"
 #include "cl_storage.h"
+#include "cl_test_commands.h"
 
 int main()
 {
@@ -29,7 +30,14 @@ int main()
 
     while(true)
     {
-        if(bn::optional<SceneId> next = scene->update())
+        bn::optional<SceneId> next = process_test_commands();
+
+        if(! next)
+        {
+            next = scene->update();
+        }
+
+        if(next)
         {
             fade_out(10);
             scene.reset();

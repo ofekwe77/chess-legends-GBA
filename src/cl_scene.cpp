@@ -29,6 +29,11 @@ void set_current_scene(SceneId id)
     current_scene = id;
 }
 
+void reset_cpu_statistics()
+{
+    cpu_max_percent = 0;
+}
+
 void frame_end()
 {
     Globals& g = globals();
@@ -50,6 +55,19 @@ void frame_end()
 
     ti.cpu_max = uint32_t(cpu_max_percent);
     ti.ewram_free = uint32_t(bn::memory::available_alloc_ewram());
+
+    // Profile facts, whatever the scene.
+    const SaveProgress& progress = g.profile.progress;
+    ti.achievements_lo = uint32_t(progress.achievements);
+    ti.achievements_hi = uint32_t(progress.achievements >> 32);
+    ti.challenge_medals = progress.challenge_medals;
+    ti.campaign_cleared = progress.encounters_cleared;
+    ti.unlocked_worlds = uint32_t(progress.story_world + 1);
+    ti.tutorial_step = progress.tutorial_lessons;
+    ti.text_speed = g.profile.settings.text_speed;
+    ti.anim_mode = g.profile.settings.animations;
+    ti.volume_music = g.profile.settings.music_volume;
+    ti.volume_sfx = g.profile.settings.sfx_volume;
     bn::core::update();
 }
 

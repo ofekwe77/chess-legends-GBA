@@ -342,6 +342,16 @@ def generate(root):
     write_bmp(os.path.join(graphics, 'mini_pieces.bmp'), minis, P.ARMY_WHITE, bpp=4)
     write_json(os.path.join(graphics, 'mini_pieces.json'), {'type': 'sprite', 'height': 8})
 
+    # Mini board (64x64, 8 px squares) for position previews: ivory and sea-green like the royal board.
+    mini_pal = [P.TRANSPARENT, (24, 16, 30), (226, 220, 198), (96, 136, 136), (250, 214, 100), (200, 80, 80)]
+    mini_pal += [(0, 0, 0)] * (16 - len(mini_pal))
+    mini_board = Canvas(64, 64)
+    for y in range(64):
+        for x in range(64):
+            mini_board.set(x, y, 2 if ((x // 8) + (y // 8)) % 2 == 0 else 3)
+    write_bmp(os.path.join(graphics, 'mini_board.bmp'), mini_board, mini_pal, bpp=4)
+    write_json(os.path.join(graphics, 'mini_board.json'), {'type': 'sprite', 'height': 64})
+
     # Announcement banner (achievements, notices): 32x16 frames - left cap, middle, right cap.
     banner = Canvas(32, 48)
     for frame in range(3):

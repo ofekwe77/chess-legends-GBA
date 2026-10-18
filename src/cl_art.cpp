@@ -11,6 +11,9 @@
 #include "bn_regular_bg_items_backdrop_title.h"
 #include "bn_regular_bg_items_backdrop_umbral.h"
 #include "bn_regular_bg_items_backdrop_verdant.h"
+#include "bn_sprite_palette_items_army_black.h"
+#include "bn_sprite_items_mini_board.h"
+#include "bn_sprite_items_mini_pieces.h"
 #include "bn_sprite_items_particles.h"
 #include "bn_sprite_items_portrait_arden.h"
 #include "bn_sprite_items_portrait_aurelia.h"
@@ -80,6 +83,57 @@ const bn::sprite_item& portrait_item(Character character)
     case Character::QUILL: return bn::sprite_items::portrait_quill;
     case Character::TAMSIN: return bn::sprite_items::portrait_tamsin;
     default: return bn::sprite_items::portrait_seraph;
+    }
+}
+
+// ------------------------------------------------------------------------------------------------ mini board
+
+MiniBoard::MiniBoard(int x, int y, int bg_priority) :
+    _board(bn::sprite_items::mini_board.create_sprite(x + 32 - 120, y + 32 - 80)),
+    _x(x),
+    _y(y),
+    _bg_priority(bg_priority)
+{
+    _board.set_bg_priority(bg_priority);
+    _board.set_z_order(5);
+}
+
+void MiniBoard::show(const Position& pos)
+{
+    _pieces.clear();
+
+    for(int i = 0; i < 64 && ! _pieces.full(); ++i)
+    {
+        const int sq = sq88(i);
+        const Piece piece = pos.board[sq];
+
+        if(piece == EMPTY)
+        {
+            continue;
+        }
+
+        const int x = _x + file_of(sq) * 8 + 4;
+        const int y = _y + (7 - rank_of(sq)) * 8 + 4;
+        bn::sprite_ptr sprite = bn::sprite_items::mini_pieces.create_sprite(x - 120, y - 80, type_of(piece) - 1);
+        sprite.set_bg_priority(_bg_priority);
+        sprite.set_z_order(0);
+
+        if(color_of(piece) == BLACK)
+        {
+            sprite.set_palette(bn::sprite_palette_items::army_black);
+        }
+
+        _pieces.push_back(bn::move(sprite));
+    }
+}
+
+void MiniBoard::set_visible(bool visible)
+{
+    _board.set_visible(visible);
+
+    for(bn::sprite_ptr& sprite : _pieces)
+    {
+        sprite.set_visible(visible);
     }
 }
 

@@ -17,6 +17,7 @@ namespace
     constexpr const char* test_positions[] = {
         "7k/5K2/8/6Q1/8/8/8/8 w - - 0 1",              // 0: Qg5-g6 stalemates
         "6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1",       // 1: Rd1-d8 mates
+        "r1bq1rk1/pp2bppp/2n1pn2/3p4/2PP4/2N1PN2/PP3PPP/R2QKB1R w KQ - 0 8 mana=3/3",   // 2: a middlegame (AI speed)
     };
 
     void unlock_everything()

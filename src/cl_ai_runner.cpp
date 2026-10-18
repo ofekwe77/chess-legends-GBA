@@ -53,9 +53,9 @@ namespace
         return ai;
     }
 
-    // Yield once 70% of the current frame has been used (by the search and by whatever the scene did earlier in the
+    // Yield once 75% of the current frame has been used (by the search and by whatever the scene did earlier in the
     // frame): the rest is Butano's update before the next VBlank. Polled at every node (~4% of a frame here).
-    constexpr int frame_budget = bn::timers::ticks_per_frame() * 70 / 100;
+    constexpr int frame_budget = bn::timers::ticks_per_frame() * 75 / 100;
 
     bool poll(void* /*user*/, uint32_t /*nodes*/)
     {

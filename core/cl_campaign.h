@@ -172,6 +172,9 @@ constexpr int campaign_encounters = 18;
 // Sets up the game for an encounter. Returns false if the data is invalid.
 bool setup_encounter(const Encounter& encounter, Game& game);
 
+// Short name of an objective (status line, side panel): "Checkmate", "Survive", "Promote", ...
+[[nodiscard]] const char* objective_name(Objective objective);
+
 // ------------------------------------------------------------------------------------------------ boss gauntlet
 
 // The six rulers in a row, each from an opening position that suits their style, with rising difficulty.

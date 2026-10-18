@@ -13,6 +13,7 @@
 #include "cl_audio.h"
 #include "cl_board_view.h"
 #include "cl_globals.h"
+#include "cl_notation.h"
 #include "cl_text.h"
 
 #include "bn_sprite_items_battle_cavalry.h"
@@ -262,12 +263,6 @@ namespace
         }
     }
 
-    const char* class_name(PieceType type)
-    {
-        constexpr const char* names[6] = { "Soldier", "Cavalry", "Mystic", "Guardian", "Sorceress", "Sovereign" };
-        return names[type - PAWN];
-    }
-
     bool reduced_effects()
     {
         return globals().profile.settings.reduced_effects;
@@ -330,7 +325,7 @@ BattleScene::BattleScene(PieceType attacker, Color attacker_color, PieceType vic
     _panel.window(0, 0, 30, 3);
     bn::string<48> caption;
     bn::ostringstream stream(caption);
-    stream << class_name(attacker) << " captures " << class_name(victim);
+    stream << piece_class_name(attacker) << " captures " << piece_class_name(victim);
     print(_caption, 112, 8, caption, TextColor::GOLD, Align::CENTER);
     print(_caption, 234, 8, "Ⓐ Skip", TextColor::GRAY, Align::RIGHT);
     _panel.commit();

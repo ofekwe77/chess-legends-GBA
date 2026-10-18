@@ -105,7 +105,7 @@ private:
     bn::vector<bn::sprite_ptr, 12> _status_text;
     bn::vector<bn::sprite_ptr, 14> _hint_text;
     bn::vector<bn::sprite_ptr, 64> _overlay_text;
-    bn::vector<bn::sprite_ptr, 8> _icons;
+    bn::vector<bn::sprite_ptr, 32> _icons;     // ability icon / captured pieces in the side panel
     MoveList _legal;
     Animation _anim;
     ObjectiveTracker _tracker;

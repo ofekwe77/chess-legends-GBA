@@ -211,6 +211,8 @@ def generate(root):
     for i in range(16):
         swatch.set(i % 8, i // 8, i)
     palettes = {'army_white': P.ARMY_WHITE, 'army_black': P.ARMY_BLACK}
+    # Dark army with a light outline: small dark pieces drawn on the dark side panel (captured pieces).
+    palettes['army_black_lit'] = [P.ARMY_BLACK[0], P.ARMY_BLACK[13]] + P.ARMY_BLACK[2:]
     for name, pal in P.FACTIONS_DARK.items():
         palettes['army_' + name] = pal
     for name, pal in palettes.items():

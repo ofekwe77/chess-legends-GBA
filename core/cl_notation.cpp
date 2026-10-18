@@ -116,6 +116,20 @@ const char* piece_type_name(PieceType type)
     }
 }
 
+const char* piece_class_name(PieceType type)
+{
+    switch(type)
+    {
+    case PAWN: return "Soldier";
+    case KNIGHT: return "Cavalry";
+    case BISHOP: return "Mystic";
+    case ROOK: return "Guardian";
+    case QUEEN: return "Sorceress";
+    case KING: return "Sovereign";
+    default: return "";
+    }
+}
+
 int move_to_coordinate(Move move, char* output, int capacity)
 {
     Writer writer(output, capacity);

@@ -24,6 +24,7 @@
 #include "cl_solver.h"
 #include "cl_text_layout.h"
 #include "cl_tutorial.h"
+#include "cl_ui_text.h"
 
 namespace cl
 {
@@ -180,7 +181,7 @@ namespace
         return stats.aborted ? PROOF_ABORTED : (ok ? PROOF_YES : PROOF_NO);
     }
 
-    const char* objective_name(cl::Objective objective)
+    const char* objective_report_name(cl::Objective objective)
     {
         switch(objective)
         {
@@ -263,7 +264,7 @@ namespace
         if(quick)
         {
             std::printf("  %-2d %-18s %-15s par %d limit %d  needs %-6s (not proven: --quick)\n", index + 1, c.title,
-                        objective_name(c.objective.type), c.par, c.objective.limit, required);
+                        objective_report_name(c.objective.type), c.par, c.objective.limit, required);
             return;
         }
 
@@ -306,7 +307,7 @@ namespace
         char key_text[24];
         cl::move_to_coordinate(key, key_text, sizeof(key_text));
         std::printf("  %-2d %-18s %-15s par %d limit %d  key %-11s needs %-6s %s%s\n", index + 1, c.title,
-                    objective_name(c.objective.type), c.par, c.objective.limit, key_text, required,
+                    objective_report_name(c.objective.type), c.par, c.objective.limit, key_text, required,
                     solvable == PROOF_YES ? "PROVEN" : "UNPROVEN", classic_note);
     }
 
@@ -444,7 +445,7 @@ namespace
         }
 
         std::printf("  %-2d W%d %-22s %-15s %-3d %-24s %s\n", index + 1, e.world + 1, e.title,
-                    objective_name(e.objective.type), e.objective.limit, status, detail);
+                    objective_report_name(e.objective.type), e.objective.limit, status, detail);
     }
 
     void validate_story_text()
@@ -587,6 +588,92 @@ namespace
         }
     }
 
+    // Match side panel (84 px) and status line: every fixed string and the worst case of every formatted line.
+    void validate_match_panel()
+    {
+        const int width = cl::layout::panel_text_width;
+        const auto fits = [](const char* where, const char* text, int max_width)
+        {
+            check_text(where, text, cl::FontId::SMALL, max_width, 1);
+        };
+
+        for(const char* text : { cl::ui::panel_empty_square, cl::ui::panel_threats_note, cl::ui::panel_captured,
+                                 cl::ui::panel_sealed, cl::ui::panel_pick_target, cl::ui::panel_cast,
+                                 cl::ui::panel_escape_ready, cl::ui::panel_escape_used, cl::ui::panel_check })
+        {
+            fits("panel text", text, width);
+        }
+
+        char line[64];
+        std::snprintf(line, sizeof(line), "%sh8", cl::ui::panel_threats);
+        fits("panel threats header", line, width);
+        std::snprintf(line, sizeof(line), "%src:e2f2@d1", cl::ui::panel_last);      // longest coordinate notation
+        fits("panel last move", line, width);
+
+        for(const char* side : { "White: 16", "Black: 16", "WHITE (AI) ◆", "BLACK (AI) ◆", "Arden ◆" })
+        {
+            fits("panel side line", side, width);
+        }
+
+        for(int c = 0; c < int(cl::Character::NARRATOR); ++c)
+        {
+            // Scenario opponents are shown by the first word of their name.
+            const char* name = cl::character_name(cl::Character(c));
+            int length = 0;
+
+            while(name[length] && name[length] != ' ')
+            {
+                ++length;
+            }
+
+            std::snprintf(line, sizeof(line), "%.*s ◆", length, name);
+            fits("panel opponent", line, width);
+        }
+
+        // Piece header: upper-case chess name, then the class right-aligned with at least a small gap.
+        for(int t = cl::PAWN; t <= cl::KING; ++t)
+        {
+            const cl::PieceType type = cl::PieceType(t);
+            char title[16] = {};
+
+            for(int i = 0; cl::piece_type_name(type)[i] && i < 15; ++i)
+            {
+                const char c = cl::piece_type_name(type)[i];
+                title[i] = c >= 'a' && c <= 'z' ? char(c - 'a' + 'A') : c;
+            }
+
+            const int header = cl::text_pixel_width(cl::FontId::SMALL, title) + cl::ui::panel_header_gap +
+                               cl::text_pixel_width(cl::FontId::SMALL, cl::piece_class_name(type));
+            check(header <= width, title, "panel header too wide (%d px)", header);
+
+            // Battle caption "<class> captures <class>", centred at x = 112 left of the skip hint (x >= 190).
+            for(int v = cl::PAWN; v < cl::KING; ++v)
+            {
+                std::snprintf(line, sizeof(line), "%s captures %s", cl::piece_class_name(type),
+                              cl::piece_class_name(cl::PieceType(v)));
+                check_text("battle caption", line, cl::FontId::SMALL, 156, 1);
+            }
+        }
+
+        for(int a = 0; a < cl::ABILITIES_COUNT; ++a)
+        {
+            fits("panel ability", cl::ability_name(cl::Ability(a)), width);
+        }
+
+        fits("panel cost", "Cost 9 ◆", width - cl::ui::panel_icon_text_offset);
+        fits("panel mana need", "Need 9 mana", width);
+        fits("panel moves left", "25 moves left", width);
+
+        for(int o = int(cl::Objective::CHECKMATE_WITHIN); o <= int(cl::Objective::CAPTURE_PAWNS); ++o)
+        {
+            const char* name = cl::objective_name(cl::Objective(o));
+            fits("panel objective", name, width);
+            // The status line falls back to the short form when the long one does not fit.
+            std::snprintf(line, sizeof(line), "%s: 25 left", name);
+            fits("status objective", line, cl::ui::status_text_width);
+        }
+    }
+
     void validate_ui_text()
     {
         for(int a = 0; a < cl::ABILITIES_COUNT; ++a)
@@ -654,6 +741,8 @@ namespace
         {
             check_text("music title", cl::music_title(t), cl::FontId::SMALL, cl::layout::list_text_width, 1);
         }
+
+        validate_match_panel();
 
         int credits_count = 0;
         const char* const* credits = cl::credits_lines(credits_count);

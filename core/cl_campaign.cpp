@@ -231,4 +231,17 @@ int challenge_medal(const Challenge& challenge, int player_moves)
     return player_moves <= best + 1 ? 2 : 1;
 }
 
+const char* objective_name(Objective objective)
+{
+    switch(objective)
+    {
+    case Objective::CHECKMATE_WITHIN: return "Checkmate";
+    case Objective::SURVIVE: return "Survive";
+    case Objective::PROMOTE: return "Promote";
+    case Objective::WIN_MATERIAL: return "Win material";
+    case Objective::CAPTURE_PAWNS: return "Take all pawns";
+    default: return "Checkmate";
+    }
+}
+
 }

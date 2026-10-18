@@ -27,6 +27,9 @@ int move_to_display(Position& pos, Move move, char* output, int capacity);
 [[nodiscard]] const char* ability_short_name(Ability ability);
 [[nodiscard]] const char* piece_type_name(PieceType type);
 
+// Fantasy class of a piece type: Soldier, Cavalry, Mystic, Guardian, Sorceress, Sovereign.
+[[nodiscard]] const char* piece_class_name(PieceType type);
+
 int square_name(int sq, char* output);
 
 }

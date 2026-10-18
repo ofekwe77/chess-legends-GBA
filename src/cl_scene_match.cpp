@@ -21,8 +21,12 @@
 #include "cl_text.h"
 #include "cl_text_layout.h"
 #include "cl_tutorial.h"
+#include "cl_ui_text.h"
 
 #include "bn_sprite_items_ability_icons.h"
+#include "bn_sprite_items_mini_pieces.h"
+#include "bn_sprite_palette_items_army_black_lit.h"
+#include "bn_sprite_palette_items_army_white.h"
 #include "bn_sprite_items_particles.h"
 #include "bn_sprite_items_pieces.h"
 #include "bn_sprite_items_sigils.h"
@@ -113,37 +117,23 @@ namespace
         }
     }
 
-    const char* piece_title(PieceType type)
+    // Upper-case chess name of a piece type ("KNIGHT"), the panel header.
+    bn::string<8> piece_title(PieceType type)
     {
-        switch(type)
+        bn::string<8> title;
+
+        for(const char* c = piece_type_name(type); *c; ++c)
         {
-        case PAWN: return "PAWN - SOLDIER";
-        case KNIGHT: return "KNIGHT - CAVALRY";
-        case BISHOP: return "BISHOP - MYSTIC";
-        case ROOK: return "ROOK - GUARDIAN";
-        case QUEEN: return "QUEEN - SORCERESS";
-        case KING: return "KING - SOVEREIGN";
-        default: return "";
+            title.push_back(*c >= 'a' && *c <= 'z' ? char(*c - 'a' + 'A') : *c);
         }
+
+        return title;
     }
 
-    char piece_letter(PieceType type)
+    // "N moves left" (or "1 move left").
+    void append_moves_left(bn::ostringstream& stream, int left)
     {
-        constexpr char letters[] = { ' ', 'P', 'N', 'B', 'R', 'Q', 'K' };
-        return letters[type];
-    }
-
-    const char* objective_label(const ObjectiveSpec& spec)
-    {
-        switch(spec.type)
-        {
-        case Objective::CHECKMATE_WITHIN: return "Checkmate";
-        case Objective::SURVIVE: return "Survive";
-        case Objective::PROMOTE: return "Promote";
-        case Objective::WIN_MATERIAL: return "Win material";
-        case Objective::CAPTURE_PAWNS: return "Take all pawns";
-        default: return "Checkmate";
-        }
+        stream << left << (left == 1 ? " move left" : " moves left");
     }
 
     bool think_frame_trampoline(void* user)
@@ -3066,11 +3056,11 @@ void MatchScene::_refresh_panel()
 
             if(checked)
             {
-                print(_panel_text, panel_x, gem_row * 8 + 10, "CHECK!", TextColor::RED);
+                print(_panel_text, panel_x, gem_row * 8 + 10, ui::panel_check, TextColor::RED);
             }
             else
             {
-                print(_panel_text, panel_x, gem_row * 8 + 10, pos.escapes[side] ? "Escape ready" : "Escape used",
+                print(_panel_text, panel_x, gem_row * 8 + 10, pos.escapes[side] ? ui::panel_escape_ready : ui::panel_escape_used,
                       pos.escapes[side] ? TextColor::GRAY : TextColor::RED);
             }
         }
@@ -3094,7 +3084,7 @@ void MatchScene::_refresh_panel()
 
             if(checked)
             {
-                print(_panel_text, panel_x, gem_row * 8 + 10, "CHECK!", TextColor::RED);
+                print(_panel_text, panel_x, gem_row * 8 + 10, ui::panel_check, TextColor::RED);
             }
         }
     };
@@ -3159,12 +3149,15 @@ void MatchScene::_panel_piece(const Position& pos)
     {
         char square[3];
         square_name(focus, square);
-        print(_panel_text, panel_x, 56, "PIECE  ◇ Ⓡ", TextColor::GRAY);
+        print(_panel_text, panel_x, 56, ui::panel_empty_square, TextColor::GRAY);
         print(_panel_text, panel_x, 70, square, TextColor::GRAY);
         return;
     }
 
+    // Chess name and fantasy class share the header line (tools/validation checks that both fit).
     print(_panel_text, panel_x, 56, piece_title(type_of(piece)), TextColor::WHITE);
+    print(_panel_text, panel_x + layout::panel_text_width, 56, piece_class_name(type_of(piece)), TextColor::GRAY,
+          Align::RIGHT);
 
     if(! arcane)
     {
@@ -3183,24 +3176,26 @@ void MatchScene::_panel_piece(const Position& pos)
         usable = usable && pos.escapes[owner] && pos.in_check();
     }
 
-    bn::sprite_ptr icon = bn::sprite_items::ability_icons.create_sprite(panel_x + 8 - 120, 72 + 8 - 80,
+    // The ability name has the full width; the icon stands beside the cost.
+    print(_panel_text, panel_x, 66, ability_name(ability), usable ? TextColor::CYAN : TextColor::GRAY);
+    bn::sprite_ptr icon = bn::sprite_items::ability_icons.create_sprite(panel_x + 8 - 120, 84 - 80,
                                                                          int(ability) + (usable ? 0 : 6));
     icon.set_bg_priority(0);
     _icons.push_back(bn::move(icon));
-    print(_panel_text, panel_x + 20, 70, ability_name(ability), usable ? TextColor::CYAN : TextColor::GRAY);
 
     bn::string<20> cost;
     bn::ostringstream stream(cost);
     stream << "Cost " << int(pos.rules.cost[ability]) << " ◆";
-    print(_panel_text, panel_x + 20, 80, cost, affordable ? TextColor::WHITE : TextColor::RED);
+    print(_panel_text, panel_x + ui::panel_icon_text_offset, 80, cost,
+          affordable ? TextColor::WHITE : TextColor::RED);
 
     if(sealed)
     {
-        print(_panel_text, panel_x, 94, "Sealed here", TextColor::RED);
+        print(_panel_text, panel_x, 94, ui::panel_sealed, TextColor::RED);
     }
     else if(_state == State::MAGIC || _state == State::COMMAND)
     {
-        print(_panel_text, panel_x, 94, "Choose a target", TextColor::GOLD);
+        print(_panel_text, panel_x, 94, ui::panel_pick_target, TextColor::GOLD);
     }
     else if(own && ! affordable)
     {
@@ -3211,7 +3206,7 @@ void MatchScene::_panel_piece(const Position& pos)
     }
     else if(own && usable && _state == State::SELECTED)
     {
-        print(_panel_text, panel_x, 94, "Ⓛ to cast", TextColor::GOLD);
+        print(_panel_text, panel_x, 94, ui::panel_cast, TextColor::GOLD);
     }
 }
 
@@ -3222,66 +3217,73 @@ void MatchScene::_panel_threats(const Position& pos)
     square_name(sq, square);
     bn::string<24> header;
     bn::ostringstream header_stream(header);
-    header_stream << "THREATS  " << square;
+    header_stream << ui::panel_threats << bn::string_view(square);   // (a char array would append all 3 bytes)
     print(_panel_text, panel_x, 56, header, TextColor::CYAN);
     int squares[16];
 
+    // Attackers of the square on each side.
     for(int c = 0; c < 2; ++c)
     {
         const Color side = Color(c);
         const int count = attacker_squares(pos, sq, side, squares);
         bn::string<24> line;
         bn::ostringstream line_stream(line);
-        line_stream << side_name(side) << ": " << count << (count == 1 ? " attacker" : " attackers");
+        line_stream << (side == WHITE ? "White: " : "Black: ") << count;
         print(_panel_text, panel_x, 70 + c * 10, line, count ? TextColor::WHITE : TextColor::GRAY);
     }
 
-    print(_panel_text, panel_x, 94, "Enemy attackers marked", TextColor::GRAY);
+    print(_panel_text, panel_x, 94, ui::panel_threats_note, TextColor::GRAY);
 }
 
 void MatchScene::_panel_game(const Position& pos)
 {
-    print(_panel_text, panel_x, 56, "GAME", TextColor::CYAN);
+    (void) pos;
+    print(_panel_text, panel_x, 54, ui::panel_captured, TextColor::CYAN);
 
+    // The pieces each side has captured, strongest first, as small overlapping piece icons (up to 15 a row fit
+    // the 84 px panel; the board holds that many fewer sprites).
     for(int c = 0; c < 2; ++c)
     {
-        bn::string<24> line;
-        bn::ostringstream stream(line);
-        stream << (c == WHITE ? "W took: " : "B took: ");
+        const Color captured_color = opposite(Color(c));
         int shown = 0;
 
         for(int type = QUEEN; type >= PAWN; --type)
         {
-            for(int n = 0; n < _captured[c][type] && shown < 8; ++n, ++shown)
+            for(int n = 0; n < _captured[c][type] && shown < 15 && ! _icons.full(); ++n, ++shown)
             {
-                stream << piece_letter(PieceType(type));
+                bn::sprite_ptr icon = bn::sprite_items::mini_pieces.create_sprite(
+                            panel_x + 4 + shown * 5 - 120, 68 + c * 10 - 80, type - 1);
+                // Dark pieces keep a light outline to stand out on the dark panel.
+                icon.set_palette(captured_color == WHITE ? bn::sprite_palette_items::army_white :
+                                                           bn::sprite_palette_items::army_black_lit);
+                icon.set_bg_priority(0);
+                icon.set_z_order(shown);
+                _icons.push_back(bn::move(icon));
             }
         }
 
         if(! shown)
         {
-            stream << "-";
+            print(_panel_text, panel_x, 64 + c * 10, "-", TextColor::GRAY);
         }
-
-        print(_panel_text, panel_x, 66 + c * 10, line, TextColor::WHITE);
     }
 
     if(_scenario && _tracker.spec().limit)
     {
-        bn::string<24> goal;
-        bn::ostringstream goal_stream(goal);
-        goal_stream << objective_label(_tracker.spec()) << ": " << _tracker.moves_left() << " left";
-        print(_panel_text, panel_x, 88, goal, TextColor::GOLD);
+        bn::string<24> left;
+        bn::ostringstream left_stream(left);
+        append_moves_left(left_stream, _tracker.moves_left());
+        print(_panel_text, panel_x, 84, objective_name(_tracker.spec().type), TextColor::GOLD);
+        print(_panel_text, panel_x, 94, left, TextColor::GOLD);
     }
     else if(! _last_move.is_null())
     {
-        (void) pos;
         char coordinate[16];
         move_to_coordinate(_last_move, coordinate, int(sizeof(coordinate)));
         bn::string<24> last;
         bn::ostringstream last_stream(last);
-        last_stream << "Last: " << coordinate;
-        print(_panel_text, panel_x, 88, last, TextColor::GRAY);
+        last_stream << ui::panel_last << bn::string_view(coordinate);
+        print(_panel_text, panel_x, 90, last, TextColor::GRAY);
     }
 }
 
@@ -3317,8 +3319,17 @@ void MatchScene::_set_status()
 
     if(_scenario && _tracker.spec().limit)
     {
+        // "Survive: 5 moves left"; the long objective names use the short form "Take all pawns: 25 left".
         const int left = _tracker.moves_left();
-        stream << objective_label(_tracker.spec()) << ": " << left << (left == 1 ? " move left" : " moves left");
+        stream << objective_name(_tracker.spec().type) << ": ";
+        append_moves_left(stream, left);
+
+        if(text_width(text) > ui::status_text_width)
+        {
+            text.clear();
+            stream << objective_name(_tracker.spec().type) << ": " << left << " left";
+        }
+
         print(_status_text, 4, 0, text, TextColor::GOLD);
         return;
     }

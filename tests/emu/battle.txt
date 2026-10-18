@@ -111,4 +111,12 @@ expect captures == 5
 frames 30
 expect toast != 0
 shot toast_after_battle
+# The game summary shows the captured pieces as icons (two on each side).
+tap A
+wait ui_state == 0 60
+tap R
+frames 4
+tap R
+frames 4
+shot panel_game_captures
 print battle_scenes captures plies stack_free sprites sprites_max

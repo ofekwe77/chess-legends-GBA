@@ -6,6 +6,9 @@ tap START
 wait scene == 3 120
 frames 20
 shot main_menu
+# The cursor starts on STORY MODE: two rows down is ARCANE CHESS.
+tap DOWN
+tap DOWN
 tap A
 wait scene == 4 120
 frames 20

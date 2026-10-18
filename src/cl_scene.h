@@ -3,7 +3,9 @@
 #define CL_SCENE_H
 
 #include "bn_optional.h"
+#include "bn_sprite_ptr.h"
 #include "bn_unique_ptr.h"
+#include "bn_vector.h"
 
 #include "cl_globals.h"
 
@@ -56,6 +58,22 @@ public:
 private:
     int _held_frames[4] = {};
     int _fired = 0;
+};
+
+// Announces newly unlocked achievements (globals().toasts) one at a time, sliding a banner in at the top of the
+// screen. Every scene owns one and calls update() once per frame.
+class ToastBanner
+{
+public:
+    // Returns true while a banner is shown.
+    bool update();
+
+private:
+    bn::vector<bn::sprite_ptr, 8> _banner;
+    bn::vector<bn::sprite_ptr, 24> _text;
+    int _frames = 0;
+
+    void _place(int y);
 };
 
 // Screen fades (blocking helpers used between scenes).

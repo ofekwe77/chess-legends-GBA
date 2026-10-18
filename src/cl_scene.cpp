@@ -8,6 +8,12 @@
 #include "bn_keypad.h"
 #include "bn_memory.h"
 #include "bn_sprite_palettes.h"
+#include "bn_string.h"
+
+#include "cl_progress.h"
+#include "cl_text.h"
+
+#include "bn_sprite_items_banner.h"
 
 namespace cl::gba
 {
@@ -28,6 +34,7 @@ void frame_end()
     Globals& g = globals();
     cl_test_interface& ti = test_interface();
     ++g.frame_counter;
+    ++g.play_frames;
     ti.magic0 = CL_TI_MAGIC0;
     ti.magic1 = CL_TI_MAGIC1;
     ti.frame = g.frame_counter;
@@ -67,6 +74,101 @@ void RepeatInput::update()
         {
             _fired |= 1 << i;
         }
+    }
+}
+
+namespace
+{
+    constexpr int toast_frames = 150;
+    constexpr int toast_slide = 10;
+    constexpr int toast_rest_y = 2;
+    constexpr int banner_sprites = 8;     // 32 px frames from x = 4 to x = 236 (the last two overlap)
+}
+
+bool ToastBanner::update()
+{
+    Globals& g = globals();
+
+    if(_frames > 0)
+    {
+        --_frames;
+        const int elapsed = toast_frames - _frames;
+        int y = toast_rest_y;
+
+        if(elapsed < toast_slide)
+        {
+            y = toast_rest_y - (toast_slide - elapsed) * 2;
+        }
+        else if(_frames < toast_slide)
+        {
+            y = toast_rest_y - (toast_slide - _frames) * 2;
+        }
+
+        _place(y);
+
+        if(_frames == 0)
+        {
+            _banner.clear();
+            _text.clear();
+            test_interface().toast = 0;
+        }
+
+        return true;
+    }
+
+    if(! g.toasts)
+    {
+        return false;
+    }
+
+    int id = 0;
+
+    while(! ((g.toasts >> id) & 1))
+    {
+        ++id;
+    }
+
+    g.toasts &= ~(uint64_t(1) << id);
+    _banner.clear();
+    _text.clear();
+
+    for(int i = 0; i < banner_sprites; ++i)
+    {
+        const int frame = i == 0 ? 0 : (i == banner_sprites - 1 ? 2 : 1);
+        bn::sprite_ptr sprite = bn::sprite_items::banner.create_sprite(0, 0, frame);
+        sprite.set_bg_priority(0);
+        sprite.set_z_order(-20);
+        _banner.push_back(bn::move(sprite));
+    }
+
+    bn::string<48> text;
+    bn::ostringstream stream(text);
+    stream << "★ " << achievement_info(Achievement(id)).title;
+    print(_text, 120, 0, text, TextColor::GOLD, Align::CENTER, 0);
+
+    for(bn::sprite_ptr& sprite : _text)
+    {
+        sprite.set_z_order(-30);
+    }
+
+    _frames = toast_frames;
+    _place(toast_rest_y - toast_slide * 2);
+    test_interface().toast = uint32_t(id + 1);
+    return true;
+}
+
+void ToastBanner::_place(int y)
+{
+    for(int i = 0; i < _banner.size(); ++i)
+    {
+        const int x = i == banner_sprites - 1 ? 236 - 32 : 4 + i * 32;
+        _banner[i].set_position(x + 16 - 120, y + 8 - 80);
+    }
+
+    // Text rows are 8 px high, vertically centred in the 16 px banner.
+    for(bn::sprite_ptr& sprite : _text)
+    {
+        sprite.set_y(y + 4 + 4 - 80);
     }
 }
 

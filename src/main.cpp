@@ -5,6 +5,7 @@
 #include "bn_sprite_palettes.h"
 
 #include "cl_scene.h"
+#include "cl_storage.h"
 
 int main()
 {
@@ -12,7 +13,17 @@ int main()
     bn::bg_palettes::set_transparent_color(bn::color(3, 2, 8));
 
     using namespace cl::gba;
-    SceneId current = SceneId::TITLE;
+    Globals& g = globals();
+
+    // The profile (settings, progress, statistics) is loaded once; a damaged copy falls back to the other slot.
+    const LoadStatus status = load_profile(g.profile);
+    test_interface().load_status = uint32_t(status);
+    test_interface().suspend_present = has_suspended_match();
+    g.load_notice = status == LoadStatus::RECOVERED || status == LoadStatus::RESET;
+    g.setup.board_theme = g.profile.settings.board_theme;
+    g.setup.difficulty = cl::Difficulty(g.profile.settings.preferred_difficulty & 3);
+
+    SceneId current = g.profile.progress.intro_seen ? SceneId::TITLE : SceneId::INTRO;
     bn::unique_ptr<Scene> scene = create_scene(current);
     fade_in(12);
 

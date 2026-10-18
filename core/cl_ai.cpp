@@ -325,8 +325,6 @@ namespace
 {
     // Scratch for the controlled imperfection of the lower levels (external RAM on the console).
     CL_EWRAM_BSS Move imperfection_moves[MAX_MOVES];
-    CL_EWRAM_BSS int imperfection_scores[MAX_MOVES];
-    CL_EWRAM_BSS int imperfection_candidates[MAX_MOVES];
 }
 
 AiDecision Ai::choose(Game& game, const AiSettings& settings, bool standard_start, PollFunction poll,
@@ -368,8 +366,9 @@ AiDecision Ai::choose(Game& game, const AiSettings& settings, bool standard_star
     decision.nodes = result.nodes;
     decision.aborted = result.aborted;
 
-    // Controlled imperfection (Apprentice / Knight): occasionally choose another move whose shallow score is close
-    // to the best shallow score. Mates found by the search are never thrown away.
+    // Controlled imperfection (Apprentice / Knight): occasionally choose another move whose quick score is close
+    // to the quick score of the move the search chose. Mates found by the search are never thrown away. The pass
+    // polls like the search and costs at most the level's node budget again.
     if(! result.aborted && profile.imperfection_percent > 0 && result.score < SCORE_MATE_BOUND &&
        result.score > -SCORE_MATE_BOUND)
     {
@@ -378,35 +377,16 @@ AiDecision Ai::choose(Game& game, const AiSettings& settings, bool standard_star
 
         if(int((next_random(state) >> 8) % 100u) < profile.imperfection_percent)
         {
-            Move* moves = imperfection_moves;
-            int* scores = imperfection_scores;
             SearchLimits quick = profile.limits;
             quick.max_quiescence_depth = 4;
-            int count = _searcher.score_root_moves(game.position(), quick, profile.eval, moves, scores, MAX_MOVES);
-            int best = -SCORE_INFINITE;
+            const int count = _searcher.acceptable_root_moves(game.position(), decision.move,
+                                                              profile.imperfection_margin, quick, profile.eval,
+                                                              imperfection_moves, MAX_MOVES, poll, poll_user);
+            decision.nodes += _searcher.last_nodes();
 
-            for(int i = 0; i < count; ++i)
+            if(count > 1)
             {
-                if(scores[i] > best)
-                {
-                    best = scores[i];
-                }
-            }
-
-            int* candidates = imperfection_candidates;
-            int candidate_count = 0;
-
-            for(int i = 0; i < count; ++i)
-            {
-                if(scores[i] >= best - profile.imperfection_margin && scores[i] > -SCORE_MATE_BOUND)
-                {
-                    candidates[candidate_count++] = i;
-                }
-            }
-
-            if(candidate_count > 1)
-            {
-                Move pick = moves[candidates[(next_random(state) >> 8) % uint32_t(candidate_count)]];
+                const Move pick = imperfection_moves[(next_random(state) >> 8) % uint32_t(count)];
 
                 if(pick != decision.move)
                 {

@@ -197,7 +197,7 @@ CL_SEARCH_CODE const TTEntry* TranspositionTable::probe(uint64_t hash) const
 {
     const TTEntry& entry = _entries[uint32_t(hash) & uint32_t(_mask)];
 
-    if(entry.bound != BOUND_NONE && entry.key == uint32_t(hash >> 32))
+    if(_current(entry) && entry.key == uint32_t(hash >> 32))
     {
         return &entry;
     }
@@ -210,13 +210,16 @@ CL_SEARCH_CODE void TranspositionTable::store(uint64_t hash, Move move, int scor
     TTEntry& entry = _entries[uint32_t(hash) & uint32_t(_mask)];
     uint32_t key = uint32_t(hash >> 32);
 
-    // Depth-preferred replacement, but always keep fresher information for the same position.
-    if(entry.bound != BOUND_NONE && entry.key != key && entry.depth > depth + 2)
+    // Depth-preferred replacement, but always keep fresher information for the same position. Entries of earlier
+    // searches are empty.
+    const bool current = _current(entry);
+
+    if(current && entry.key != key && entry.depth > depth + 2)
     {
         return;
     }
 
-    if(entry.key == key && move.is_null())
+    if(current && entry.key == key && move.is_null())
     {
         move = Move(entry.move);
     }
@@ -225,7 +228,7 @@ CL_SEARCH_CODE void TranspositionTable::store(uint64_t hash, Move move, int scor
     entry.move = move.data();
     entry.score = int16_t(score);
     entry.depth = int8_t(depth);
-    entry.bound = bound;
+    entry.bound = uint8_t(bound | (_generation << 2));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -338,7 +341,7 @@ CL_SEARCH_CODE int Searcher::_evaluate()
     EvalCacheEntry& entry = _mem.eval_cache[uint32_t(_pos.hash) & (SearchMemory::eval_cache_size - 1)];
     const uint32_t key = uint32_t(_pos.hash >> 32);
 
-    if(entry.valid && entry.key == key)
+    if(entry.valid == _mem.eval_generation && entry.key == key)
     {
         return entry.score;
     }
@@ -346,7 +349,7 @@ CL_SEARCH_CODE int Searcher::_evaluate()
     const int score = evaluate(_pos, _profile);
     entry.key = key;
     entry.score = int16_t(score);
-    entry.valid = 1;
+    entry.valid = _mem.eval_generation;
     return score;
 }
 
@@ -708,9 +711,11 @@ CL_SEARCH_CODE int Searcher::_negamax(int depth, int ply, int alpha, int beta, b
         {
             int score = score_from_tt(entry->score, ply);
 
-            if(entry->bound == TranspositionTable::BOUND_EXACT ||
-               (entry->bound == TranspositionTable::BOUND_LOWER && score >= beta) ||
-               (entry->bound == TranspositionTable::BOUND_UPPER && score <= alpha))
+            const uint8_t bound = TranspositionTable::bound_of(*entry);
+
+            if(bound == TranspositionTable::BOUND_EXACT ||
+               (bound == TranspositionTable::BOUND_LOWER && score >= beta) ||
+               (bound == TranspositionTable::BOUND_UPPER && score <= alpha))
             {
                 return score;
             }

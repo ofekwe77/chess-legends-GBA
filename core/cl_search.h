@@ -27,7 +27,7 @@ struct TTEntry
     uint32_t move;
     int16_t score;
     int8_t depth;
-    uint8_t bound;
+    uint8_t bound;      // bits 0-1: bound type; bits 2-7: search generation (other generations count as empty)
 };
 
 class TranspositionTable
@@ -40,8 +40,19 @@ public:
 
     void init(TTEntry* storage, int entries_power_of_two);
     void clear();
+
+    // Starts a new search. Entries stored by earlier searches then behave exactly like empty ones (probe misses,
+    // store replaces), so every search sees the same table as after clear() without paying for the clear; the
+    // table is really cleared when the 6-bit generation wraps (every 63 searches).
+    void new_search();
+
     [[nodiscard]] const TTEntry* probe(uint64_t hash) const;
     void store(uint64_t hash, Move move, int score, int depth, uint8_t bound);
+
+    [[nodiscard]] static uint8_t bound_of(const TTEntry& entry)
+    {
+        return entry.bound & 3;
+    }
 
     [[nodiscard]] int size() const
     {
@@ -51,6 +62,12 @@ public:
 private:
     TTEntry* _entries = nullptr;
     int _mask = 0;
+    uint8_t _generation = 1;
+
+    [[nodiscard]] bool _current(const TTEntry& entry) const
+    {
+        return (entry.bound & 3) != BOUND_NONE && (entry.bound >> 2) == _generation;
+    }
 };
 
 struct SearchLimits
@@ -85,7 +102,7 @@ struct EvalCacheEntry
 {
     uint32_t key;
     int16_t score;
-    int16_t valid;
+    int16_t valid;      // generation of the search that stored it (SearchMemory::eval_generation)
 };
 
 // Large working storage; the caller decides where it lives (EWRAM on the console).
@@ -96,6 +113,7 @@ struct SearchMemory
     static constexpr int eval_cache_size = 2048;
 
     EvalCacheEntry eval_cache[eval_cache_size];
+    int16_t eval_generation = 0;    // entries of other generations are empty (the cache depends on the profile)
 
     Move moves[move_stack_capacity];
     int32_t scores[move_stack_capacity];
@@ -123,15 +141,25 @@ public:
     SearchResult search(const Position& root, const uint64_t* history, int history_count, const SearchLimits& limits,
                         const EvalProfile& profile, PollFunction poll = nullptr, void* poll_user = nullptr);
 
-    // Scores every legal root move with a shallow search (used for controlled imperfection at low levels).
-    int score_root_moves(const Position& root, const SearchLimits& limits, const EvalProfile& profile, Move* moves,
-                         int* scores, int capacity);
+    // Controlled imperfection at the low levels: writes the legal root moves whose quick (quiescence) score is at
+    // most `margin` below the quick score of `anchor` (the move the search chose; listed first). Zero-window
+    // tests keep it cheap; it polls like the search and never spends more than `limits.max_nodes` nodes. Moves
+    // not tested when the budget runs out are simply not offered. Returns the count (0 when nothing applies).
+    int acceptable_root_moves(const Position& root, Move anchor, int margin, const SearchLimits& limits,
+                              const EvalProfile& profile, Move* moves, int capacity, PollFunction poll = nullptr,
+                              void* poll_user = nullptr);
 
     // Stack guard: when a node's stack address falls below this limit, the node is evaluated statically instead of
     // being expanded (0 disables the guard; the console sets it to the bottom of the AI stack plus a margin).
     void set_stack_limit(uintptr_t limit)
     {
         _stack_limit = limit;
+    }
+
+    // Nodes visited by the last search or imperfection pass.
+    [[nodiscard]] uint32_t last_nodes() const
+    {
+        return _nodes;
     }
 
 private:

@@ -19,6 +19,33 @@ void TranspositionTable::clear()
     {
         _entries[i] = TTEntry{ 0, 0, 0, 0, BOUND_NONE };
     }
+
+    _generation = 1;
+}
+
+void TranspositionTable::new_search()
+{
+    if(++_generation > 63)
+    {
+        clear();
+    }
+}
+
+namespace
+{
+    // Starts a new search for the evaluation cache (same principle as the transposition table generations).
+    void new_eval_generation(SearchMemory& memory)
+    {
+        if(++memory.eval_generation >= 32000)
+        {
+            for(EvalCacheEntry& entry : memory.eval_cache)
+            {
+                entry.valid = 0;
+            }
+
+            memory.eval_generation = 1;
+        }
+    }
 }
 
 SearchResult Searcher::search(const Position& root, const uint64_t* history, int history_count,
@@ -38,8 +65,10 @@ SearchResult Searcher::search(const Position& root, const uint64_t* history, int
     _budget_active = false;
     _root_side = root.side;
 
-    // Deterministic start: identical inputs always produce identical searches.
-    _tt.clear();
+    // Deterministic start: identical inputs always produce identical searches (generations make the earlier
+    // searches' entries invisible, exactly as clearing would).
+    _tt.new_search();
+    new_eval_generation(_mem);
 
     for(int p = 0; p < SEARCH_MAX_PLY; ++p)
     {
@@ -60,10 +89,6 @@ SearchResult Searcher::search(const Position& root, const uint64_t* history, int
         _mem.repetition_filter[i] = 0;
     }
 
-    for(EvalCacheEntry& entry : _mem.eval_cache)
-    {
-        entry.valid = 0;
-    }
 
     // Game history (positions before the root).
     _path_count = 0;
@@ -259,18 +284,21 @@ SearchResult Searcher::search(const Position& root, const uint64_t* history, int
     return result;
 }
 
-int Searcher::score_root_moves(const Position& root, const SearchLimits& limits, const EvalProfile& profile,
-                               Move* moves, int* scores, int capacity)
+int Searcher::acceptable_root_moves(const Position& root, Move anchor, int margin, const SearchLimits& limits,
+                                    const EvalProfile& profile, Move* moves, int capacity, PollFunction poll,
+                                    void* poll_user)
 {
     _pos = root;
     _limits = limits;
     _profile = profile;
-    _poll = nullptr;
+    _poll = poll;
+    _poll_user = poll_user;
     _nodes = 0;
     _stack_top = 0;
     _aborted = false;
-    _budget_active = false;
+    _budget_active = true;      // at most limits.max_nodes nodes in total
     _root_side = root.side;
+    new_eval_generation(_mem);
     _path_count = 0;
     _history_floor = 0;
 
@@ -279,35 +307,60 @@ int Searcher::score_root_moves(const Position& root, const SearchLimits& limits,
         _mem.repetition_filter[i] = 0;
     }
 
-    for(EvalCacheEntry& entry : _mem.eval_cache)
-    {
-        entry.valid = 0;
-    }
 
-    int count = 0;
     MoveBuffer buffer(_mem.root_moves, MAX_MOVES);
     generate_pseudo(_pos, buffer);
     _stack_top = 0;
 
+    // Quick score of a root move: the window is open for the anchor, a zero window at the threshold otherwise.
+    const auto quick_score = [this](Move move, int alpha, int beta)
+    {
+        Undo undo;
+        _pos.make(move, undo);
+        const bool check = _pos.in_check();
+        _push_path(undo.hash);
+        const int score = -_quiesce(-beta, -alpha, 1, 0, check);
+        _pop_path();
+        _pos.unmake(move, undo);
+        return score;
+    };
+
+    if(capacity < 1 || ! leaves_king_safe(_pos, anchor))
+    {
+        return 0;
+    }
+
+    const int anchor_score = quick_score(anchor, -SCORE_INFINITE, SCORE_INFINITE);
+
+    if(_aborted || anchor_score <= -SCORE_MATE_BOUND || anchor_score >= SCORE_MATE_BOUND)
+    {
+        return 0;
+    }
+
+    const int threshold = anchor_score - margin;
+    int count = 0;
+    moves[count++] = anchor;
+
     for(int i = 0; i < buffer.count && count < capacity; ++i)
     {
-        Move move = buffer.moves[i];
+        const Move move = buffer.moves[i];
 
-        if(! leaves_king_safe(_pos, move))
+        if(move == anchor || ! leaves_king_safe(_pos, move))
         {
             continue;
         }
 
-        Undo undo;
-        _pos.make(move, undo);
-        bool check = _pos.in_check();
-        _push_path(undo.hash);
-        int score = -_quiesce(-SCORE_INFINITE, SCORE_INFINITE, 1, 0, check);
-        _pop_path();
-        _pos.unmake(move, undo);
-        moves[count] = move;
-        scores[count] = score;
-        ++count;
+        const int score = quick_score(move, threshold - 1, threshold);
+
+        if(_aborted)
+        {
+            break;      // budget spent or cancelled: the untested moves are not offered
+        }
+
+        if(score >= threshold)
+        {
+            moves[count++] = move;
+        }
     }
 
     return count;

@@ -2,7 +2,10 @@
 //
 // Usage: simulate [--games N] [--classic] [--white LEVEL] [--black LEVEL] [--personality-white P]
 //                 [--personality-black P] [--max-plies N] [--seed S] [--alternate] [--csv FILE] [--quiet]
+//                 [--profile]
 //   LEVEL: 0 Apprentice, 1 Knight, 2 Sorcerer, 3 Grandmaster. P: 0..6 (see cl_ai.h).
+//   --profile: the console polls the search every 8 nodes and yields a frame from there; this reports the
+//   longest stretch of host time between two polls, and the slowest choose() and Game::apply() calls.
 //
 // Every statistic printed comes from games actually played by this program; nothing is estimated.
 #include <chrono>
@@ -45,6 +48,40 @@ namespace
     cl::TTEntry tt_entries[1 << 15];
     cl::Game game;
 
+    // --profile measurements (host microseconds).
+    struct Worst
+    {
+        double us = 0;
+        int game = 0;
+        int ply = 0;
+        uint32_t nodes = 0;
+    };
+
+    using Clock = std::chrono::steady_clock;
+    Clock::time_point last_poll;
+    double poll_gap_worst = 0;
+    double poll_gap_sum = 0;
+    long long poll_count = 0;
+
+    bool profile_poll(void*, uint32_t)
+    {
+        const Clock::time_point now = Clock::now();
+        const double gap = std::chrono::duration<double, std::micro>(now - last_poll).count();
+        poll_gap_worst = gap > poll_gap_worst ? gap : poll_gap_worst;
+        poll_gap_sum += gap;
+        ++poll_count;
+        last_poll = now;
+        return false;
+    }
+
+    void note(Worst& worst, double us, int game_index, int ply, uint32_t nodes = 0)
+    {
+        if(us > worst.us)
+        {
+            worst = Worst{ us, game_index, ply, nodes };
+        }
+    }
+
     int material(const cl::Position& pos, cl::Color c)
     {
         int total = 0;
@@ -83,7 +120,11 @@ int main(int argc, char** argv)
     uint32_t seed = 1;
     bool alternate = false;
     bool quiet = false;
+    bool profile = false;
     const char* csv_path = nullptr;
+    Worst worst_choose;
+    Worst worst_apply;
+    Worst worst_gap;
 
     for(int i = 1; i < argc; ++i)
     {
@@ -102,6 +143,7 @@ int main(int argc, char** argv)
         else if(! std::strcmp(a, "--alternate")) { alternate = true; }
         else if(! std::strcmp(a, "--csv")) { csv_path = next; ++i; }
         else if(! std::strcmp(a, "--quiet")) { quiet = true; }
+        else if(! std::strcmp(a, "--profile")) { profile = true; }
         else
         {
             std::printf("unknown option %s\n", a);
@@ -169,7 +211,29 @@ int main(int argc, char** argv)
         while(! game.over() && game.plies_played() < max_plies)
         {
             const cl::Color side = game.position().side;
-            cl::AiDecision decision = ai.choose(game, settings[side], book_allowed);
+            cl::AiDecision decision;
+
+            if(profile)
+            {
+                cl::AiSettings polled = settings[side];
+                polled.poll_mask = 7;           // as on the console
+                const double gap_before = poll_gap_worst;
+                poll_gap_worst = 0;
+                const Clock::time_point begin = Clock::now();
+                last_poll = begin;
+                decision = ai.choose(game, polled, book_allowed, profile_poll, nullptr);
+                const Clock::time_point end = Clock::now();
+                profile_poll(nullptr, 0);       // the stretch after the last poll counts too
+                note(worst_choose, std::chrono::duration<double, std::micro>(end - begin).count(), g + 1,
+                     game.plies_played(), decision.nodes);
+                note(worst_gap, poll_gap_worst, g + 1, game.plies_played(), decision.nodes);
+                poll_gap_worst = gap_before > poll_gap_worst ? gap_before : poll_gap_worst;
+            }
+            else
+            {
+                decision = ai.choose(game, settings[side], book_allowed);
+            }
+
             cl::Position before = game.position();
             totals.mana_stored_sum += before.mana[side];
             ++totals.mana_samples;
@@ -186,8 +250,16 @@ int main(int argc, char** argv)
             }
 
             cl::ActionInfo info;
+            const Clock::time_point apply_begin = Clock::now();
+            const bool applied = game.apply(decision.move, &info);
 
-            if(! game.apply(decision.move, &info))
+            if(profile)
+            {
+                note(worst_apply, std::chrono::duration<double, std::micro>(Clock::now() - apply_begin).count(), g + 1,
+                     game.plies_played());
+            }
+
+            if(! applied)
             {
                 ++totals.illegal;
                 std::printf("ILLEGAL MOVE in game %d at ply %d\n", g, game.plies_played());
@@ -304,6 +376,15 @@ int main(int argc, char** argv)
     std::printf("\nMana spent %lld; average stored mana at decision time %.2f\n", totals.mana_spent,
                 totals.mana_samples ? double(totals.mana_stored_sum) / totals.mana_samples : 0.0);
     std::printf("Host time %.1fs\n", totals.seconds);
+
+    if(profile)
+    {
+        std::printf("Profile (host us): slowest choose %.0f (game %d ply %d, %u nodes); slowest apply %.0f (game %d "
+                    "ply %d); longest stretch without a poll %.0f (game %d ply %d, search of %u nodes); average poll "
+                    "gap %.1f\n", worst_choose.us, worst_choose.game, worst_choose.ply, unsigned(worst_choose.nodes),
+                    worst_apply.us, worst_apply.game, worst_apply.ply, worst_gap.us, worst_gap.game, worst_gap.ply,
+                    unsigned(worst_gap.nodes), poll_count ? poll_gap_sum / double(poll_count) : 0.0);
+    }
 
     if(csv)
     {

@@ -1,0 +1,4064 @@
+# CHESS LEGENDS: ARCANE WARS
+
+## THE COMPLETE GAME BOY ADVANCE DEVELOPMENT MASTER PROMPT
+
+### Your role
+
+You are an autonomous senior game development team consisting of:
+
+* A Game Director
+* A Lead Game Designer
+* A Senior C++ Engineer
+* A Game Boy Advance Hardware Specialist
+* A Chess Engine Developer
+* An AI and Search Algorithm Engineer
+* A Game Balance Designer
+* A Pixel Art Director
+* A Character Artist
+* A Technical Animator
+* A Cinematic Director
+* A UI/UX Designer
+* A Music Composer
+* A Sound Designer
+* A Narrative Designer
+* A Quality Assurance Engineer
+* A Build and Release Engineer
+
+You are responsible for the entire production of an original, ambitious, polished fantasy chess video game for the **original Nintendo Game Boy Advance**.
+
+This must be a genuine Game Boy Advance game.
+
+The final deliverable must be a playable `.gba` ROM, together with its complete source code, original graphical assets, music, sound effects, tests, build instructions, and documentation.
+
+The project is titled:
+
+# CHESS LEGENDS: ARCANE WARS
+
+The game combines the strategic depth of traditional chess with supernatural abilities, fantasy characters, cinematic combat sequences, intelligent opponents, a story campaign, unlockable content, and a carefully balanced original ruleset.
+
+The visual ambition is inspired by the quality and presentation of excellent Game Boy Advance-era games, especially tactical RPGs, fantasy strategy games, and polished Nintendo handheld titles from approximately 2001–2005.
+
+The game must look, sound, and feel like a genuine premium handheld release from that era.
+
+However, all artwork, music, characters, names, animations, and other creative assets must be original.
+
+Do not copy proprietary sprites, music, characters, dialogue, or other copyrighted assets from existing games.
+
+---
+
+# PART I — THE NON-NEGOTIABLE MISSION
+
+## 1. The primary objective
+
+Develop a complete, playable, polished Game Boy Advance chess game that includes:
+
+1. Fully functional classic chess.
+2. A new fantasy chess variant called Arcane Chess.
+3. A deterministic special-ability system.
+4. Resource-based magical combat.
+5. A sophisticated chess AI.
+6. Multiple AI difficulty levels.
+7. An extensive single-player campaign.
+8. Six fantasy kingdoms.
+9. Six major boss characters.
+10. At least eighteen campaign encounters.
+11. Cinematic combat animations.
+12. Original pixel-art characters.
+13. Animated menus and backgrounds.
+14. Original music and sound effects.
+15. Achievements and unlockables.
+16. Tactical challenges and puzzles.
+17. Local two-player gameplay.
+18. Persistent save data.
+19. Customizable game settings.
+20. A genuine, independently playable GBA ROM.
+
+This is not a prototype request.
+
+Do not create an impressive title screen followed by an unfinished game.
+
+Do not implement buttons that lead to empty placeholder screens.
+
+Do not create fake AI that selects random moves while pretending to think strategically.
+
+Do not provide only screenshots, mockups, pseudocode, or a desktop simulation.
+
+Do not substitute an HTML game for a GBA ROM.
+
+The actual Game Boy Advance ROM is the primary product.
+
+## 2. One autonomous development run
+
+The user intends to provide this prompt once.
+
+Work as independently as your environment permits.
+
+Do not stop after creating the initial project structure.
+
+Do not stop after implementing the main menu.
+
+Do not stop after implementing basic piece movement.
+
+Do not stop after producing a ROM that merely boots.
+
+Proceed through design, development, asset creation, integration, testing, debugging, balancing, optimization, and packaging.
+
+You may and should perform many internal development iterations.
+
+However, do not require the user to repeatedly provide new instructions or approve routine implementation decisions.
+
+When a design detail is unspecified, make a thoughtful decision consistent with this document.
+
+Prioritize a cohesive, playable, technically correct game over a large collection of poorly integrated features.
+
+Never silently abandon a required feature.
+
+If an actual environmental or technical blocker prevents completion, document the precise obstacle, the evidence, what remains functional, and what is incomplete.
+
+Never claim that code compiled, tests passed, an emulator was launched, or a ROM was verified unless you actually performed that action.
+
+## 3. Definition of success
+
+A successful release:
+
+* Boots successfully in a Game Boy Advance emulator.
+* Displays a polished animated title screen.
+* Allows the player to navigate every major menu.
+* Supports complete legal chess gameplay.
+* Supports the specified Arcane Chess abilities.
+* Features a working computer opponent.
+* Allows matches to reach valid conclusions.
+* Provides a playable campaign with persistent progress.
+* Includes working tactical challenges.
+* Includes actual original music and sound effects.
+* Includes animated battle sequences.
+* Saves and loads correctly.
+* Runs within the restrictions of real GBA hardware.
+* Contains no known game-breaking bugs.
+* Can be rebuilt from the delivered source code.
+* Has been tested to the extent permitted by the available environment.
+
+The final artifact should feel like a game rather than a programming demonstration.
+
+---
+
+# PART II — HARDWARE AND TECHNICAL ARCHITECTURE
+
+## 4. Target hardware
+
+Target the original Game Boy Advance.
+
+Important hardware characteristics:
+
+* ARM7TDMI processor running at approximately 16.78 MHz.
+* 240 × 160 pixel display.
+* Approximately 59.7 Hz display refresh.
+* 256 KB external work RAM.
+* 32 KB internal work RAM.
+* 96 KB video RAM.
+* Hardware sprite and tiled-background rendering.
+* Hardware button input.
+* Limited audio processing resources.
+* Cartridge-based ROM and persistent save memory.
+
+The game must not depend on features available only in modern desktop hardware.
+
+It must not require:
+
+* Internet connectivity.
+* An operating system.
+* External files at runtime.
+* A GPU.
+* Floating-point acceleration.
+* Dynamic asset downloads.
+* An external chess engine executable.
+* An external music player.
+
+All required content must be incorporated into the ROM.
+
+## 5. Technology selection
+
+Preferred development stack:
+
+**Language:** C++
+
+**GBA development framework:** Butano
+
+**Toolchain:** devkitPro / devkitARM
+
+**Build system:** GNU Make, following the framework's supported conventions
+
+**Preferred emulator:** mGBA
+
+**Host-side development tools:** Python and standard C++ tooling as appropriate
+
+Use official Butano examples and documentation to establish correct project configuration, asset conversion, audio playback, text rendering, SRAM storage, and graphics management.
+
+Before implementation, inspect the available environment.
+
+Determine whether the required compiler, framework, Make, Python, and emulator are available.
+
+If dependencies are absent, attempt reasonable supported installation or setup steps when permitted.
+
+Pin or document dependency revisions where practical.
+
+Do not pretend that a host compiler can produce a valid GBA ROM without the necessary cross-compilation toolchain.
+
+The build must generate a real `.gba` binary.
+
+## 6. Recommended architecture
+
+Separate the project into clearly defined systems.
+
+Suggested modules:
+
+### Engine Core
+
+* Game loop
+* Scene manager
+* Input handling
+* Timing
+* Scene transitions
+* Resource management
+
+### Chess Core
+
+* Board representation
+* Piece representation
+* Move generation
+* Attack detection
+* Legal move validation
+* Special chess rules
+* Position evaluation
+* Endgame detection
+* Position hashing
+* Move history
+
+### Arcane Rules
+
+* Mana management
+* Ability definitions
+* Ability validation
+* Ability execution
+* Special move generation
+* Arcane-specific state
+* Scenario modifiers
+
+### Artificial Intelligence
+
+* Search engine
+* Move ordering
+* Evaluation functions
+* Difficulty configuration
+* Transposition table
+* Search budgeting
+* AI personality profiles
+
+### Graphics
+
+* Board renderer
+* Piece renderer
+* Character portraits
+* Sprite animation
+* Particle effects
+* Palette effects
+* Cinematic effects
+* Text rendering
+
+### Audio
+
+* Music management
+* Music transitions
+* Sound-effect playback
+* Volume settings
+
+### User Interface
+
+* Menus
+* HUD
+* Ability selection
+* Match interface
+* Dialogue
+* Settings
+* Tutorials
+
+### Campaign
+
+* World map
+* Encounter definitions
+* Boss data
+* Story progression
+* Unlocks
+* Dialogue sequences
+
+### Persistence
+
+* Save data
+* Settings
+* Match suspension
+* Achievements
+* Statistics
+
+### Quality Assurance
+
+* Unit tests
+* Rule regression tests
+* Chess perft tests
+* AI tests
+* Gameplay simulations
+* Save-data tests
+* Performance tests
+
+The chess engine must be independent of the graphics engine.
+
+A host-side program must be able to execute chess games without loading artwork or initializing GBA hardware.
+
+This separation is extremely important for testing, debugging, AI simulation, and game balance.
+
+## 7. Memory and performance policy
+
+Avoid unnecessary dynamic memory allocation during gameplay and AI search.
+
+Prefer:
+
+* Fixed-size arrays.
+* Compact integer representations.
+* Bounded buffers.
+* Preallocated search structures.
+* Deterministic resource ownership.
+* Fixed-point arithmetic when appropriate.
+* Efficient tiled backgrounds.
+* Palette swapping.
+* Compressed static assets.
+* Sprite reuse.
+* Incremental updates.
+* Frame-based scheduling.
+
+Do not allocate large structures inside recursive search functions.
+
+Do not repeatedly reconstruct assets during rendering.
+
+Do not perform expensive search operations inside graphics rendering functions.
+
+Heavy AI calculations must not permanently freeze the interface.
+
+The game should remain responsive while the computer thinks.
+
+---
+
+# PART III — GAME IDENTITY AND CREATIVE DIRECTION
+
+## 8. Overall identity
+
+CHESS LEGENDS: ARCANE WARS is a fantasy strategy game based on chess.
+
+The player enters a world where kingdoms wage wars through magical chess battles.
+
+Each piece represents a living fantasy warrior.
+
+Pawns are soldiers.
+
+Knights are armored cavalry warriors.
+
+Bishops are mystics and spellcasters.
+
+Rooks are living fortresses or armored guardians.
+
+Queens are powerful commanders.
+
+Kings are legendary rulers.
+
+The board represents a magical battlefield.
+
+The game's visual identity should combine:
+
+* Medieval fantasy.
+* Magical warfare.
+* Rich jewel-toned palettes.
+* Detailed pixel art.
+* Expressive character portraits.
+* Elegant user interface design.
+* Dramatic combat animation.
+* Retro tactical-RPG presentation.
+* Subtle gothic and mystical design elements.
+
+Avoid generic developer graphics.
+
+Avoid plain colored rectangles as the final representation of characters.
+
+Avoid relying on Unicode chess symbols as the primary game artwork.
+
+The final game must possess its own recognizable artistic identity.
+
+## 9. Visual clarity
+
+The game is displayed at 240 × 160 pixels.
+
+Gameplay clarity is essential.
+
+Use a top-down orthographic chessboard rather than an isometric board.
+
+This is a deliberate design decision.
+
+A traditional top-down board allows all sixty-four squares to remain visible and readable while preserving space for interface information.
+
+The cinematic battle scenes can use larger character illustrations and side-view compositions.
+
+This creates a contrast between strategic gameplay and dramatic combat presentation.
+
+## 10. Visual production quality
+
+Prioritize thoughtful pixel art over excessive visual complexity.
+
+Characters must have:
+
+* Distinct silhouettes.
+* Recognizable equipment.
+* Clear team identification.
+* Consistent proportions.
+* Readable animation poses.
+* Purposeful color palettes.
+
+The player must instantly distinguish:
+
+* Pawn
+* Knight
+* Bishop
+* Rook
+* Queen
+* King
+
+This distinction must remain clear even when different fantasy factions use different cosmetic appearances.
+
+Use outline treatment, readable silhouettes, and color accents that remain visible on different board themes.
+
+Support visual accessibility through optional high-contrast colors.
+
+---
+
+# PART IV — GAME MODES
+
+## 11. Main game modes
+
+Implement the following modes.
+
+### MODE A — STORY MODE
+
+A campaign across six fantasy kingdoms.
+
+Includes:
+
+* Story dialogue.
+* World progression.
+* Enemy characters.
+* Boss encounters.
+* Arcane Chess battles.
+* Special starting positions.
+* Tactical objectives.
+* Unlockable artwork.
+* Achievements.
+* Persistent progress.
+
+### MODE B — CLASSIC CHESS
+
+Traditional chess without magical abilities.
+
+The game must follow established chess rules.
+
+Allow the player to select:
+
+* Human vs AI.
+* Human vs Human on one console.
+* White pieces.
+* Black pieces.
+* AI difficulty.
+* Board appearance.
+
+### MODE C — ARCANE CHESS
+
+The full fantasy chess experience.
+
+Includes all six special abilities and the mana system.
+
+Support:
+
+* Human vs AI.
+* Human vs Human.
+* Multiple difficulty levels.
+* Optional board themes.
+* Full game-state saving.
+
+### MODE D — CHALLENGE MODE
+
+A collection of tactical puzzles and scenario challenges.
+
+Challenges should teach and test:
+
+* Traditional chess tactics.
+* Pins.
+* Forks.
+* Discovered attacks.
+* Defensive moves.
+* Checkmate calculation.
+* Mana conservation.
+* Magical repositioning.
+* Multi-turn ability combinations.
+* Emergency king defense.
+
+### MODE E — BOSS GAUNTLET
+
+A sequence of increasingly difficult encounters against the six major bosses.
+
+This mode uses the same Arcane Chess rules.
+
+The main differences are:
+
+* AI difficulty.
+* Starting position.
+* Strategic personality.
+* Encounter presentation.
+* Story context.
+
+Do not allow hidden AI cheats.
+
+---
+
+# PART V — CLASSIC CHESS RULES
+
+## 12. Fully implement chess
+
+Classic Chess must support all normal rules.
+
+Implement correct movement for:
+
+* Pawn
+* Knight
+* Bishop
+* Rook
+* Queen
+* King
+
+Include:
+
+* Legal captures.
+* Checks.
+* Checkmate.
+* Stalemate.
+* Castling on both sides.
+* En passant.
+* Pawn promotion.
+* Underpromotion.
+* Legal king movement.
+* Pinned-piece restrictions.
+* Discovered checks.
+* Double checks.
+* Draw by repetition.
+* Draw by move-count rules.
+* Dead-position detection.
+* Resignation.
+* Draw by agreement in local multiplayer.
+
+### Castling
+
+Check all relevant requirements:
+
+* Neither the king nor the relevant rook has previously moved.
+* Squares between the king and rook are empty.
+* The king is not currently in check.
+* The king does not pass through an attacked square.
+* The king does not finish on an attacked square.
+
+### En passant
+
+Allow en passant only immediately after a qualifying two-square pawn advance.
+
+Correctly handle situations where the en passant capture would expose the capturing player's king.
+
+### Pawn promotion
+
+When a pawn reaches the final rank through a legal normal move, present a promotion menu.
+
+Allow:
+
+* Queen
+* Rook
+* Bishop
+* Knight
+
+Do not automatically promote every pawn to a queen.
+
+### Draws
+
+Support standard claimable and automatic draw conditions as appropriate.
+
+Distinguish threefold repetition from fivefold repetition.
+
+Distinguish fifty-move claims from automatic seventy-five-move adjudication.
+
+Do not confuse insufficient mating material with simplistic piece-count checks.
+
+The Classic Chess mode must be suitable for serious casual chess play.
+
+---
+
+# PART VI — ARCANE CHESS: THE COMPLETE GAMEPLAY SYSTEM
+
+## 13. Core design philosophy
+
+Arcane Chess preserves the strategic identity of chess while adding new positional abilities.
+
+The central design rule is:
+
+**Magic changes the geometry of the battle. Chess determines how pieces capture.**
+
+The game must reward planning rather than uncontrolled magical attacks.
+
+All actions are deterministic.
+
+There are no random critical hits.
+
+There are no random misses.
+
+There is no damage-number system.
+
+There are no hit points.
+
+A normal legal capture removes the captured piece.
+
+A magical ability may reposition pieces, but it does not directly capture an enemy.
+
+The objective remains checkmate.
+
+This preserves a meaningful connection to traditional chess while introducing unfamiliar tactical possibilities.
+
+## 14. The action economy
+
+Each player performs exactly one primary action per turn.
+
+A primary action may be:
+
+1. A regular legal chess move.
+2. A legal magical ability.
+
+Never permit a player to move normally and cast a spell as two separate actions during the same turn.
+
+A magical action consumes the player's turn.
+
+After an action:
+
+1. Validate the resulting position.
+2. Apply the action.
+3. Update relevant movement flags.
+4. Update special chess rights.
+5. Update move counters.
+6. Update mana expenditure.
+7. Advance to the next player.
+8. Apply the next player's turn-start mana regeneration.
+9. Evaluate check, checkmate, stalemate, and other terminal conditions.
+10. Update the repetition history.
+
+Use one authoritative transition function.
+
+Do not scatter turn advancement and mana regeneration across separate UI components.
+
+This prevents double regeneration and state inconsistencies.
+
+## 15. Mana system
+
+Both sides receive a shared magical resource called **ARCANE ENERGY**.
+
+Starting mana:
+
+0 before the first turn-start event.
+
+Mana regeneration:
+
++1 at the beginning of each player's turn.
+
+Maximum mana:
+
+6.
+
+No mana is awarded for captures.
+
+No mana is awarded for checks.
+
+No additional mana is awarded for winning exchanges.
+
+There is no random mana regeneration.
+
+Unused mana carries over between turns.
+
+Mana above the maximum is discarded.
+
+Each player's mana is independent.
+
+Magic costs mana immediately upon successful execution.
+
+Illegal actions must not consume mana.
+
+### Important implementation detail
+
+At the initial playable position, White must have already received the first turn-start mana point.
+
+Black receives the first mana point when Black's first turn begins.
+
+Store the game state so that turn-start regeneration is applied exactly once.
+
+This must remain correct after loading a saved game.
+
+### Strategic objective
+
+Mana should introduce meaningful opportunity costs.
+
+The player must choose between spending energy now and saving it for later.
+
+The game should not reward using magic simply because the player has enough mana.
+
+---
+
+# PART VII — THE SIX MAGICAL ABILITIES
+
+## 16. Pawn — SHADOW STEP
+
+**Cost: 2 mana**
+
+A pawn may move exactly one square horizontally.
+
+Allowed directions:
+
+* One square left.
+* One square right.
+
+The destination must be empty.
+
+The pawn cannot capture using Shadow Step.
+
+The movement must remain within the board.
+
+The pawn keeps its color and normal attack direction.
+
+### Strategic purpose
+
+Allow pawns to escape blocked structures, reshape pawn formations, and create unexpected lines.
+
+### Special restrictions
+
+Using Shadow Step counts as the pawn having moved.
+
+A pawn that has used Shadow Step loses eligibility for its initial two-square advance.
+
+Shadow Step does not grant a promotion.
+
+The move must not leave the player's king in check.
+
+The resulting position can create or remove ordinary chess attacks.
+
+### Intended balance
+
+Useful for positional restructuring.
+
+Not an instant capture mechanism.
+
+Not a free extra move.
+
+---
+
+## 17. Knight — PHASE SHIFT
+
+**Cost: 3 mana**
+
+A knight may teleport to an empty square directly adjacent to its current square.
+
+Adjacency includes all eight neighboring squares.
+
+This is different from normal knight movement.
+
+The destination must be:
+
+* On the board.
+* Empty.
+* Legal under king-safety rules.
+
+Phase Shift cannot capture an enemy.
+
+### Strategic purpose
+
+Create unexpected tactical threats.
+
+Escape poor positions.
+
+Reposition knights into forks.
+
+Open defensive and offensive possibilities.
+
+### Balance considerations
+
+The move costs a complete turn and three mana.
+
+It must not permit a second attack or capture during the same action.
+
+---
+
+## 18. Bishop — GHOST WALK
+
+**Cost: 3 mana**
+
+A bishop may move diagonally through exactly one friendly piece.
+
+The ability permits the bishop to ignore that single friendly blocker.
+
+The bishop cannot pass through an enemy piece.
+
+The bishop cannot pass through more than one occupied square.
+
+The destination must be empty.
+
+The bishop must remain on its original diagonal.
+
+The destination must be different from the starting square.
+
+### Strategic purpose
+
+Allow bishops to escape closed structures.
+
+Create unexpected diagonal threats.
+
+Support long-range positional combinations.
+
+### Balance considerations
+
+Ghost Walk is a repositioning action only.
+
+It never captures.
+
+The normal bishop attack map remains unchanged after the move.
+
+The move must not expose the friendly king to check.
+
+---
+
+## 19. Rook — CASTLE SWAP
+
+**Cost: 4 mana**
+
+A rook may exchange positions with a friendly bishop or knight.
+
+Requirements:
+
+* Both pieces are on the same rank or file.
+* The distance between them is at most three squares.
+* Every square strictly between them is empty.
+* The target piece is a friendly bishop or knight.
+* The resulting position is legal.
+
+The rook and target piece swap positions simultaneously.
+
+Neither piece captures anything.
+
+### Strategic purpose
+
+Reorganize defensive structures.
+
+Move a rook into an unexpected attacking position.
+
+Retreat or redeploy a supporting minor piece.
+
+Create tactical combinations involving two pieces.
+
+### Special rules
+
+The rook is considered moved after Castle Swap.
+
+If the rook previously retained castling rights, those rights are lost.
+
+Swapping does not create or restore castling rights.
+
+The swap may create check through the resulting normal attack map.
+
+The full resulting position must be validated for king safety.
+
+---
+
+## 20. Queen — ROYAL COMMAND
+
+**Cost: 5 mana**
+
+The queen can command a nearby friendly piece to reposition.
+
+Eligible targets:
+
+* Pawn
+* Knight
+* Bishop
+* Rook
+
+The queen cannot command:
+
+* The king.
+* Another queen.
+* An enemy piece.
+* Herself.
+
+The target must occupy one of the eight squares adjacent to the queen.
+
+The destination must:
+
+* Be empty.
+* Be adjacent to the queen.
+* Be no more than one square away from the target's original position, using king-style adjacency.
+* Be different from the target's starting square.
+
+The queen remains stationary.
+
+The commanded piece moves.
+
+Royal Command does not capture.
+
+### Strategic purpose
+
+Make the queen an actual battlefield commander.
+
+Allow subtle tactical rearrangement.
+
+Create forks, defensive formations, and discovered attacks.
+
+Open files and diagonals.
+
+### Pawn restrictions
+
+A pawn relocated through Royal Command is considered moved.
+
+Royal Command must not place a pawn directly on its promotion rank.
+
+A pawn cannot promote through this ability.
+
+### Rook restrictions
+
+A rook repositioned through Royal Command loses any remaining castling eligibility.
+
+### Balance philosophy
+
+The queen is already the strongest traditional chess piece.
+
+Her magical ability should create strategic opportunities rather than instantly destroy multiple enemy pieces.
+
+---
+
+## 21. King — ROYAL ESCAPE
+
+**Cost: 5 mana**
+
+**Usage limit: once per player per game.**
+
+Royal Escape is an emergency king ability.
+
+It can only be activated when the king is currently in check.
+
+The king may leap exactly two squares in any of the eight directions.
+
+Allowed vectors:
+
+* Two horizontally.
+* Two vertically.
+* Two diagonally.
+
+The king may jump over the intermediate square.
+
+The intermediate square may be occupied.
+
+The destination must be empty.
+
+The destination must not be attacked under normal chess attack rules.
+
+The king must finish in a legal position.
+
+Royal Escape cannot capture.
+
+### Strategic purpose
+
+Allow a dramatic defensive response to dangerous attacks.
+
+Create uncertainty around an otherwise forced-looking mating attack.
+
+Encourage the attacking player to consider the opponent's mana and unused royal ability.
+
+### Balance restrictions
+
+Royal Escape:
+
+* Costs five mana.
+* Requires the king to be in check.
+* Can only be used once.
+* Consumes the entire turn.
+* Cannot land on an attacked square.
+* Permanently removes the king's castling rights.
+
+### Critical rule
+
+Royal Escape must be considered when determining checkmate.
+
+If the defender will have five mana at the beginning of the defending turn and Royal Escape remains unused, the move generator must consider all legal escape destinations before declaring checkmate.
+
+---
+
+# PART VIII — SPECIAL INTERACTIONS AND EDGE CASES
+
+## 22. Check detection
+
+Check is determined using the normal attack patterns of chess pieces.
+
+Magical abilities do not directly attack squares for the purpose of determining check.
+
+However, magic can reposition pieces.
+
+After a magical action, normal attack maps must be recalculated.
+
+A resulting normal attack on the enemy king constitutes check.
+
+## 23. Legal magical actions
+
+An ability is legal only if:
+
+1. The acting player owns the relevant piece.
+2. The player has sufficient mana.
+3. All ability-specific requirements are satisfied.
+4. The target squares are valid.
+5. The entire resulting position is valid.
+6. The acting player's king is not in check after the action.
+
+The final requirement applies even if the player was already in check before the action.
+
+A magical ability may resolve check by moving the king, blocking an attack, or otherwise making the final position safe.
+
+Do not implement special-case shortcuts that bypass normal king-safety validation.
+
+## 24. Castling and magic
+
+Traditional castling remains available in Arcane Chess.
+
+However:
+
+* A rook moved by Castle Swap loses castling rights.
+* A rook moved by Royal Command loses castling rights.
+* A king moved by Royal Escape loses castling rights.
+* Returning a piece to its original square never restores lost rights.
+
+## 25. En passant and magic
+
+En passant is created only by a qualifying normal two-square pawn advance.
+
+Magical movement does not create en passant eligibility.
+
+An existing en passant opportunity expires after the opponent's next completed action, even if that action is magical.
+
+## 26. Promotion and magic
+
+Normal promotion rules apply only when a pawn reaches its promotion rank through a legal normal move.
+
+Magical relocation cannot directly trigger promotion.
+
+Any magic that changes a pawn's position must correctly update movement history.
+
+## 27. Fifty-move and seventy-five-move counters
+
+Use a consistent definition for Arcane Chess.
+
+A pawn movement resets the relevant halfmove counter, whether that pawn was moved normally or magically.
+
+A normal capture resets the counter.
+
+A magical action involving only non-pawn pieces does not reset the counter.
+
+This rule must be documented clearly.
+
+## 28. Repetition detection
+
+A position in Arcane Chess is determined by more than the placement of pieces.
+
+Position identity must account for:
+
+* Piece placement.
+* Side to move.
+* Relevant castling rights.
+* Relevant en passant rights.
+* White mana.
+* Black mana.
+* White Royal Escape availability.
+* Black Royal Escape availability.
+
+Movement-history details must be represented wherever they affect legal future actions.
+
+Two boards with identical pieces but different mana values are not the same Arcane Chess position.
+
+Use a reliable hashing system.
+
+Include collision-resistant verification where practical.
+
+## 29. Dead positions
+
+Be conservative when declaring automatic dead-position draws in Arcane Chess.
+
+Some positions that are dead in traditional chess may behave differently when magical repositioning is available.
+
+Do not blindly reuse traditional insufficient-material shortcuts.
+
+At minimum, recognize trivially dead positions such as king versus king.
+
+Other cases should be recognized only when proven safe.
+
+## 30. Stalemate
+
+Stalemate occurs when the player to move:
+
+* Is not in check.
+* Has no legal normal chess move.
+* Has no legal magical action.
+
+The legal-action check must use the player's actual mana after turn-start regeneration.
+
+Royal Escape is unavailable when the king is not in check.
+
+## 31. Deterministic game state
+
+Every action must be replayable.
+
+For a given complete state and action, the resulting state must always be identical.
+
+Avoid hidden gameplay randomness.
+
+Use randomness only for cosmetic effects or controlled AI difficulty variation.
+
+The deterministic rules engine will enable testing, replays, AI search, and debugging.
+
+---
+
+# PART IX — STRATEGIC DEPTH AND BALANCE
+
+## 32. Core balance goals
+
+The game must encourage:
+
+* Positional planning.
+* Tactical foresight.
+* Mana conservation.
+* Defensive resource management.
+* Long-term coordination.
+* Calculated sacrifices.
+* King safety.
+* Piece development.
+* Timing.
+* Multi-turn ability combinations.
+
+The magic system should expand chess rather than replace it.
+
+A player who plays strategically should consistently outperform a player who wastes mana.
+
+## 33. No dominant ability
+
+Avoid a situation where one ability becomes the universally correct choice.
+
+Every ability must have meaningful strengths and weaknesses.
+
+Examples:
+
+Shadow Step should be useful for pawn structures.
+
+Phase Shift should be useful for tactical repositioning.
+
+Ghost Walk should be useful for escaping blocked diagonals.
+
+Castle Swap should be useful for rearranging supporting pieces.
+
+Royal Command should be useful for coordinated positional play.
+
+Royal Escape should be useful as an expensive emergency defense.
+
+These are intended strategic roles, not assumptions that the initial parameters are perfectly balanced.
+
+## 34. Avoid positive feedback loops
+
+Do not award extra mana for captures or material advantage.
+
+Do not make the leading player automatically regenerate resources faster.
+
+Do not allow permanent upgrades to grant competitive advantages in normal Arcane Chess matches.
+
+Both sides must have access to the same abilities under the same rules.
+
+## 35. Magical combinations
+
+Create strategic combinations naturally through the rules.
+
+Examples:
+
+* Royal Command repositioning a knight to threaten a fork.
+* Ghost Walk opening a diagonal attack.
+* Shadow Step changing a pawn structure to expose a file.
+* Castle Swap creating a discovered attack.
+* Phase Shift creating pressure that forces a defensive response.
+* Conserving mana to retain Royal Escape as a defensive option.
+
+Do not give players free additional actions for executing combinations.
+
+The combination system should reward planning over several turns.
+
+## 36. Balance parameters
+
+Store tunable values in a centralized configuration.
+
+Initial parameters:
+
+| Ability       | Mana cost |
+| ------------- | --------: |
+| Shadow Step   |         2 |
+| Phase Shift   |         3 |
+| Ghost Walk    |         3 |
+| Castle Swap   |         4 |
+| Royal Command |         5 |
+| Royal Escape  |         5 |
+
+Maximum mana: 6.
+
+Regeneration: 1 per turn.
+
+Royal Escape usage: once per match.
+
+These values are initial design parameters.
+
+You may adjust them based on documented evidence from testing.
+
+Do not modify them casually.
+
+If you adjust a parameter, document:
+
+* The previous value.
+* The new value.
+* The observed problem.
+* The relevant test evidence.
+* The expected strategic effect.
+
+---
+
+# PART X — THE ARTIFICIAL INTELLIGENCE ENGINE
+
+## 37. General AI philosophy
+
+The AI is one of the most important components of the game.
+
+Do not implement a random-move opponent.
+
+Do not create AI that blindly captures the highest-value available piece.
+
+Do not create AI that activates magic whenever mana is available.
+
+Implement a genuine chess search engine capable of evaluating positions and planning ahead.
+
+The AI must be able to play both Classic Chess and Arcane Chess.
+
+It must use the same legal move generator as the human player.
+
+The AI must not cheat.
+
+## 38. Search algorithm
+
+Implement an efficient search system appropriate for the GBA.
+
+Preferred techniques:
+
+* Negamax.
+* Alpha-beta pruning.
+* Iterative deepening.
+* Principal variation move ordering.
+* Transposition tables.
+* Zobrist hashing.
+* Capture ordering.
+* Killer move heuristics.
+* History heuristics.
+* Quiescence search.
+* Check extensions where safe.
+* Incremental evaluation where appropriate.
+
+Advanced pruning techniques may be added if they are carefully validated.
+
+Avoid unsafe pruning assumptions that ignore magical tactical moves.
+
+For example, a quiet magical repositioning action may create a serious check or tactical threat.
+
+The search system must understand that a move without a capture can still be extremely important.
+
+## 39. Search correctness
+
+The AI must consider:
+
+* Standard legal chess moves.
+* All affordable legal magical abilities.
+* The opponent's mana.
+* The opponent's special abilities.
+* Royal Escape availability.
+* Checkmate.
+* Draw.
+* Promotion.
+* Repetition.
+* Endgame situations.
+
+Do not generate magical moves in a separate tactical subsystem that the main search ignores.
+
+Normal moves and magic are alternative actions in the same search tree.
+
+## 40. Position evaluation
+
+Begin with conventional approximate piece values:
+
+| Piece  | Base evaluation |
+| ------ | --------------: |
+| Pawn   |             100 |
+| Knight |             320 |
+| Bishop |             330 |
+| Rook   |             500 |
+| Queen  |             900 |
+
+These are starting weights, not absolute truths.
+
+The evaluation function should also consider:
+
+* Piece-square tables.
+* Mobility.
+* King safety.
+* Pawn structure.
+* Passed pawns.
+* Isolated pawns.
+* Doubled pawns.
+* Open files.
+* Bishop activity.
+* Knight outposts.
+* Material balance.
+* Development.
+* Tactical threats.
+* Endgame phase.
+* Mana reserves.
+* Ability availability.
+* Royal Escape status.
+* Vulnerability to magical repositioning.
+
+Avoid simplistic evaluation that values six mana at a fixed price regardless of the position.
+
+Mana can be more valuable when tactical opportunities or defensive emergencies exist.
+
+Its marginal value should also reflect the six-point storage cap.
+
+## 41. Quiescence search
+
+Use quiescence search to reduce tactical instability near the search horizon.
+
+The implementation must remain aware of checks and forced responses.
+
+When a position is in check, do not use a simplistic stand-pat evaluation as though the side could safely do nothing.
+
+Generate all necessary legal evasions.
+
+Consider a carefully bounded selection of forcing magical actions where required for tactical correctness.
+
+Do not allow unbounded quiescence expansion.
+
+## 42. Time and computation budgets
+
+The original GBA has limited processing power.
+
+The AI must respect a configurable computation budget.
+
+Use iterative deepening so that a valid best-known move is always available.
+
+If the budget expires, return the best completed search result.
+
+Do not select a partially evaluated illegal move.
+
+Do not freeze the console indefinitely.
+
+The computer's thinking must be interruptible by appropriate game-state controls.
+
+### Interface during thinking
+
+Display:
+
+* A thinking indicator.
+* Subtle character animation.
+* An animated magical effect.
+* Optional indication of current search progress.
+
+The board and essential UI should continue to update.
+
+Avoid misleading indicators that imply search depth or certainty not actually achieved.
+
+## 43. Difficulty levels
+
+Implement at least four levels:
+
+### APPRENTICE
+
+Designed for beginners.
+
+Characteristics:
+
+* Limited search budget.
+* Reduced positional sophistication.
+* Occasional strategically imperfect choices.
+* Always legal moves.
+* Basic king protection.
+
+### KNIGHT
+
+Intermediate opponent.
+
+Characteristics:
+
+* Better tactical awareness.
+* Sensible development.
+* Basic mana conservation.
+* Avoidance of obvious material losses.
+
+### SORCERER
+
+Advanced opponent.
+
+Characteristics:
+
+* More extensive search.
+* Tactical combinations.
+* Good resource management.
+* Better king safety.
+* More accurate positional evaluation.
+
+### GRANDMASTER
+
+The strongest practical configuration supported by the hardware.
+
+Characteristics:
+
+* Highest reasonable search budget.
+* Strongest available evaluation.
+* More effective move ordering.
+* More accurate tactical analysis.
+* Sophisticated magical combinations.
+
+Do not claim actual human grandmaster playing strength.
+
+The label is a fantasy difficulty name.
+
+All difficulties should use the same legal rules.
+
+Difficulty must not be implemented by allowing illegal moves or granting secret mana.
+
+## 44. AI personalities
+
+Story-mode bosses should have recognizable strategic tendencies.
+
+Implement personalities through bounded evaluation preferences, opening choices, and search configuration.
+
+Examples:
+
+**Aggressive:** Prefers initiative and attacking opportunities.
+
+**Defensive:** Values pawn structure and king safety.
+
+**Tactical:** Prefers forcing variations and piece coordination.
+
+**Positional:** Prioritizes space, mobility, and long-term structure.
+
+**Trickster:** Favors unusual but objectively defensible magical repositioning.
+
+**Master:** Uses the strongest balanced configuration.
+
+These preferences must not override basic tactical correctness.
+
+Do not create personalities that routinely sacrifice their queens without compensation.
+
+## 45. Host-side AI testing
+
+Build a host-side executable that can run the game engine without GBA graphics.
+
+Use it to perform:
+
+* AI versus AI matches.
+* Deterministic search tests.
+* Tactical puzzle tests.
+* Position evaluation tests.
+* Move generation verification.
+* Performance benchmarks.
+* Balance experiments.
+
+Whenever practical, run a substantial set of automated games.
+
+Track:
+
+* White wins.
+* Black wins.
+* Draws.
+* Average match length.
+* Ability usage frequency.
+* Mana expenditure.
+* Checkmate frequency.
+* AI search depth.
+* Nodes searched.
+* Search time.
+* Illegal move attempts.
+* Repetition and stalemate outcomes.
+
+Alternate colors when comparing AI configurations.
+
+Avoid drawing strong balance conclusions from tiny samples.
+
+Do not invent statistics for simulations that were not executed.
+
+---
+
+# PART XI — THE SIX KINGDOMS AND THE STORY CAMPAIGN
+
+## 46. Campaign concept
+
+The world was once united by a magical artifact known as the **Crown of Six**.
+
+The crown maintained balance between six kingdoms.
+
+After its destruction, six magical fragments fell into the possession of rival rulers.
+
+The kingdoms began fighting through Arcane Chess, an ancient form of strategic magical warfare.
+
+The player assumes the role of a young royal tactician.
+
+Their mission is to travel across the kingdoms, challenge their rulers, recover the fragments, and uncover the truth behind the crown's destruction.
+
+The campaign should gradually introduce new mechanics, stronger AI, and more sophisticated tactical situations.
+
+## 47. Campaign structure
+
+Create six worlds.
+
+Each world contains:
+
+* A visual introduction.
+* A distinct environment.
+* A main enemy character.
+* Two preliminary encounters.
+* One major boss encounter.
+* Original dialogue.
+* Distinct musical identity.
+* Unique artwork.
+* At least one tactical challenge.
+* A campaign reward.
+
+Total main campaign encounters:
+
+**18.**
+
+All encounters must be playable.
+
+Every encounter must have a clear victory condition.
+
+The campaign must not rely on purely decorative level nodes.
+
+---
+
+## WORLD 1 — THE VERDANT MARCH
+
+### Theme
+
+Ancient forests, ruined temples, emerald magic, living roots, and forgotten guardians.
+
+### Main character
+
+**Rowan Thorn — The Emerald Warden**
+
+A calm, strategic ruler who values balance and defense.
+
+### Visual identity
+
+* Emerald green.
+* Moss-covered stone.
+* Gold highlights.
+* Ancient trees.
+* Floating leaves.
+* Forest spirits.
+
+### AI personality
+
+Positional and defensive.
+
+### Encounter progression
+
+1. Basic Arcane Chess tutorial encounter.
+2. Pawn structure and Shadow Step challenge.
+3. Boss battle against Rowan Thorn.
+
+### Narrative purpose
+
+Introduce the magical world and its rules.
+
+### Signature cinematic
+
+Vines rise around the battlefield while a glowing emerald crown fragment appears.
+
+---
+
+## WORLD 2 — THE INFERNO BASTION
+
+### Theme
+
+Volcanic fortresses, black iron, lava, fire magic, and siege warfare.
+
+### Main character
+
+**Veyra Ember — The Ash Queen**
+
+An aggressive commander who values initiative and tactical pressure.
+
+### Visual identity
+
+* Crimson.
+* Orange.
+* Black stone.
+* Molten metal.
+* Embers.
+* Flaming banners.
+
+### AI personality
+
+Aggressive and tactical.
+
+### Encounter progression
+
+4. Offensive development challenge.
+5. Rook coordination and Castle Swap encounter.
+6. Boss battle against Veyra Ember.
+
+### Signature cinematic
+
+A burning fortress emerges from darkness as lava flows illuminate the board.
+
+---
+
+## WORLD 3 — THE FROZEN COURT
+
+### Theme
+
+Snow-covered palaces, crystalline architecture, magical mirrors, and winter spirits.
+
+### Main character
+
+**Ysra Veil — The Frost Empress**
+
+A patient strategist who specializes in maintaining strong defensive structures.
+
+### Visual identity
+
+* Ice blue.
+* White.
+* Silver.
+* Pale violet.
+* Snow particles.
+* Shimmering crystals.
+
+### AI personality
+
+Highly defensive and positional.
+
+### Encounter progression
+
+7. Defensive resource management.
+8. Bishop mobility and Ghost Walk challenge.
+9. Boss battle against Ysra Veil.
+
+### Signature cinematic
+
+The battlefield freezes into crystalline glass, followed by a dramatic ice fracture.
+
+---
+
+## WORLD 4 — THE UMBRAL ARCHIVE
+
+### Theme
+
+Forgotten libraries, occult towers, shadow magic, arcane books, and celestial mysteries.
+
+### Main character
+
+**Noctis Vane — The Shadow Scholar**
+
+An unpredictable strategist who favors complex tactical threats.
+
+### Visual identity
+
+* Dark purple.
+* Midnight blue.
+* Silver.
+* Magical runes.
+* Floating manuscripts.
+* Shadow trails.
+
+### AI personality
+
+Trickster and tactical.
+
+### Encounter progression
+
+10. Knight maneuvering challenge.
+11. Phase Shift tactical encounter.
+12. Boss battle against Noctis Vane.
+
+### Signature cinematic
+
+The screen darkens as magical symbols illuminate the battlefield.
+
+---
+
+## WORLD 5 — THE STORM SPIRE
+
+### Theme
+
+Floating citadels, lightning storms, ancient machines, and skyborne temples.
+
+### Main character
+
+**Rael Tempest — The Thunder Sovereign**
+
+A dynamic ruler who favors active pieces and coordinated pressure.
+
+### Visual identity
+
+* Electric blue.
+* Gold.
+* Dark steel.
+* Storm clouds.
+* Lightning arcs.
+* Floating architecture.
+
+### AI personality
+
+Aggressive positional play.
+
+### Encounter progression
+
+13. Mobility and initiative.
+14. Multi-piece magical combinations.
+15. Boss battle against Rael Tempest.
+
+### Signature cinematic
+
+Lightning strikes the spire while the camera reveals an enormous magical battlefield.
+
+---
+
+## WORLD 6 — THE CROWN NEXUS
+
+### Theme
+
+The ruins of the original imperial capital.
+
+A mysterious palace suspended between light and darkness.
+
+### Main character
+
+**Aurelia Voss — The Last Sovereign**
+
+The final opponent.
+
+A brilliant strategist who understands every major mechanic.
+
+### Visual identity
+
+* Royal gold.
+* White.
+* Deep violet.
+* Stained glass.
+* Celestial patterns.
+* Floating crown fragments.
+
+### AI personality
+
+Strongest balanced AI configuration.
+
+### Encounter progression
+
+16. Advanced resource-management encounter.
+17. Complex magical combination challenge.
+18. Final boss battle against Aurelia Voss.
+
+### Signature cinematic
+
+The six crown fragments assemble in the sky above the final battlefield.
+
+The player confronts Aurelia.
+
+After victory, the truth behind the conflict is revealed and the kingdoms are reunited.
+
+---
+
+# PART XII — CAMPAIGN GAMEPLAY RULES
+
+## 48. Fair boss encounters
+
+Bosses may differ in:
+
+* AI strength.
+* Strategic preferences.
+* Opening choices.
+* Starting positions.
+* Starting mana.
+* Scenario objectives.
+* Visual abilities.
+* Music.
+* Dialogue.
+
+However, all gameplay differences must be explicit.
+
+No hidden cheats.
+
+No secret illegal moves.
+
+No invisible extra actions.
+
+No unannounced mana regeneration.
+
+The baseline Arcane Chess rules must remain consistent.
+
+Scenario-specific changes may be introduced through data-driven encounter definitions.
+
+The UI must explain any such conditions before the encounter.
+
+The AI must understand the same conditions.
+
+## 49. Encounter variety
+
+Avoid eighteen identical starting positions with different portraits.
+
+Create a meaningful progression.
+
+Use a mixture of:
+
+* Full standard-start matches.
+* Preconfigured tactical positions.
+* Defensive survival scenarios.
+* Limited-resource scenarios.
+* Endgame challenges.
+* Specific tactical objectives.
+* Stronger boss matches.
+
+For full matches, the objective is checkmate or an accepted terminal result.
+
+For puzzle-like encounters, provide an explicitly defined objective and victory evaluator.
+
+Do not declare a player victorious simply because an animation finished.
+
+Every objective must be enforced by game-state logic.
+
+## 50. Narrative dialogue
+
+Create concise, memorable dialogue for each major character.
+
+Characters should have distinct voices.
+
+Include:
+
+* Pre-battle dialogue.
+* Boss introduction.
+* Victory response.
+* Defeat response.
+* Post-boss narrative sequence.
+* Final ending dialogue.
+
+Dialogue must fit comfortably on the GBA display.
+
+Use short text boxes with readable fonts.
+
+Allow the player to advance text manually.
+
+Support faster text and optional skipping.
+
+Avoid excessively long exposition.
+
+The narrative should complement gameplay rather than interrupt it constantly.
+
+---
+
+# PART XIII — COMBAT ANIMATION SYSTEM
+
+## 51. Combat presentation philosophy
+
+Combat animations should evoke high-quality tactical RPGs from the Game Boy Advance era.
+
+When a piece captures another piece, the game should be capable of transitioning from the strategic board to a dramatic side-view combat scene.
+
+The attacking and defending pieces appear as fantasy characters.
+
+The attack is shown through animation.
+
+The defending character is defeated.
+
+The game returns to the updated chessboard.
+
+These animations are visualizations of deterministic chess outcomes.
+
+They must not introduce additional combat calculations.
+
+There are no HP bars.
+
+There are no random misses.
+
+There are no additional damage mechanics.
+
+## 52. Combat scene composition
+
+The battle screen should use a side-view layout.
+
+The attacking character occupies one side.
+
+The defending character occupies the opposite side.
+
+A themed background provides context.
+
+Use:
+
+* Animated character sprites.
+* Background layers.
+* Camera movement or simulated camera movement.
+* Screen shake.
+* Particle effects.
+* Palette flashes.
+* Impact frames.
+* Motion trails.
+* Dramatic pauses.
+* Victory or defeat poses.
+
+The sequence must remain suitable for the actual hardware.
+
+## 53. Character battle animations
+
+Create distinct animation behavior for all six chess-piece classes.
+
+### Pawn — Soldier
+
+Animation concept:
+
+* Takes a defensive stance.
+* Draws a short sword.
+* Rushes forward.
+* Performs a quick strike.
+* Returns to idle.
+
+### Knight — Cavalry Champion
+
+Animation concept:
+
+* Raises a lance or sword.
+* Leans forward.
+* Charges toward the opponent.
+* Performs a powerful sweeping strike.
+* Slides back into position.
+
+### Bishop — Arcane Mystic
+
+Animation concept:
+
+* Raises a magical staff.
+* Charges a glowing symbol.
+* Releases an energy beam or magical strike.
+* Magical particles disappear.
+* Returns to an idle spellcasting pose.
+
+### Rook — Fortress Guardian
+
+Animation concept:
+
+* Braces behind heavy armor.
+* Raises a massive weapon.
+* Performs a heavy attack.
+* Creates an impact shockwave.
+* Returns to a defensive pose.
+
+### Queen — Royal Sorceress
+
+Animation concept:
+
+* Extends a hand or magical weapon.
+* A large spell circle appears.
+* Arcane energy gathers.
+* A dramatic magical strike is released.
+* The character returns to a commanding pose.
+
+### King — Sovereign
+
+Animation concept:
+
+* Draws a royal blade.
+* Raises a protective magical aura.
+* Performs a deliberate, powerful attack.
+* Returns to a dignified stance.
+
+All animations should communicate character identity.
+
+Do not simply slide a static sprite left and right for every class.
+
+## 54. Captured character reactions
+
+Create defeat reactions appropriate to each class.
+
+Examples:
+
+* Soldier falls backward.
+* Knight loses balance.
+* Mystic dissolves into magical particles.
+* Fortress Guardian collapses.
+* Queen's magical aura shatters.
+
+Avoid gore.
+
+Use fantasy defeat effects.
+
+## 55. Magical ability animations
+
+Each ability must have recognizable visual feedback.
+
+### Shadow Step
+
+Dark smoke appears around the pawn.
+
+The pawn briefly becomes a shadow silhouette.
+
+The silhouette shifts sideways.
+
+Smoke disperses.
+
+### Phase Shift
+
+The knight flashes.
+
+A magical afterimage appears.
+
+The knight vanishes.
+
+A short teleportation effect plays at the destination.
+
+The knight reappears.
+
+### Ghost Walk
+
+The bishop becomes translucent.
+
+A spectral aura surrounds it.
+
+It passes through the blocking piece.
+
+It rematerializes at the destination.
+
+### Castle Swap
+
+A magical connection forms between the two selected pieces.
+
+Both glow.
+
+Energy trails cross.
+
+The pieces exchange positions.
+
+A brief shockwave confirms the action.
+
+### Royal Command
+
+The queen raises a glowing magical symbol.
+
+A line of magical energy connects the queen to the selected ally.
+
+The ally moves to its commanded destination.
+
+The spell effect dissipates.
+
+### Royal Escape
+
+The screen darkens briefly.
+
+A royal protective seal appears.
+
+The king flashes in golden light.
+
+The king leaps to the destination.
+
+The seal breaks apart.
+
+A dramatic sound effect plays.
+
+## 56. Cinematic pacing
+
+The default full capture sequence should be satisfying without becoming exhausting.
+
+Target approximately two to four seconds for common captures, with flexibility for more dramatic finishing sequences.
+
+Allow:
+
+* Full animations.
+* Fast animations.
+* Minimal animations.
+* Animation skipping.
+
+Boss introductions may be longer.
+
+All cinematics should support skipping when appropriate.
+
+Never force the player to watch a lengthy animation after every ordinary move.
+
+## 57. Animation architecture
+
+Implement reusable timeline-based animation control.
+
+Support:
+
+* Sprite frame changes.
+* Position changes.
+* Visibility changes.
+* Palette changes.
+* Screen shake.
+* Sound triggers.
+* Particle spawning.
+* Transition events.
+* Completion callbacks.
+
+Animations must not modify chess rules.
+
+The chess engine determines the outcome first.
+
+The animation system visualizes the accepted result.
+
+If an animation is skipped, the final state must be identical.
+
+The player must never lose a move because an animation was interrupted.
+
+---
+
+# PART XIV — PIXEL ART ASSET PRODUCTION
+
+## 58. Original art requirement
+
+Create original pixel art for the project.
+
+The repository must contain the actual assets used in the ROM.
+
+Do not provide descriptions of artwork without producing the assets.
+
+Do not create only reference images that the game cannot load.
+
+Create an actual asset pipeline.
+
+## 59. Required visual assets
+
+At minimum, produce:
+
+### Interface artwork
+
+* Main title logo.
+* Menu backgrounds.
+* Button graphics.
+* Highlight frames.
+* Dialogue boxes.
+* Ability icons.
+* Mana indicators.
+* Cursor graphics.
+* Difficulty icons.
+* Achievement icons.
+* World-selection icons.
+
+### Chess assets
+
+* Six white-piece classes.
+* Six black-piece classes.
+* Selected-piece variants.
+* Legal-move markers.
+* Capture markers.
+* Check indicators.
+* Last-move highlighting.
+* Magical ability targeting graphics.
+
+### Character artwork
+
+* Six major boss portraits.
+* Player-character portrait.
+* Multiple supporting character portraits or expressions.
+* Six fantasy faction designs.
+* Battle sprites for all six piece classes.
+* Attack animation frames.
+* Idle animation frames.
+* Defeat animation frames.
+* Magical effect sprites.
+
+### Background artwork
+
+* Main menu background.
+* Campaign map.
+* Forest environment.
+* Volcano environment.
+* Frozen palace environment.
+* Shadow archive environment.
+* Storm citadel environment.
+* Final royal palace environment.
+* Combat backgrounds.
+* Credits background.
+
+### Cinematic artwork
+
+* Intro sequence illustrations.
+* Kingdom introduction frames.
+* Boss introduction frames.
+* Ending sequence illustrations.
+
+## 60. Asset creation methods
+
+Use the best available practical method.
+
+If image-generation tools are available to the development environment, use them appropriately and convert the outputs into original, GBA-compatible pixel art.
+
+If image-generation tools are unavailable, create original artwork programmatically or through source-controlled asset-generation scripts.
+
+Python-based image generation is acceptable.
+
+Use pixel-level drawing, layered geometric construction, manual sprite definitions, and palette-controlled compositing where useful.
+
+The art must be intentionally designed.
+
+Avoid using randomly generated noise as a replacement for meaningful illustration.
+
+Avoid generic emoji as final assets.
+
+Avoid plain letters as the final representation of chess pieces.
+
+Do not claim hand-drawn art was produced if the assets are merely basic placeholders.
+
+## 61. Pixel art standards
+
+Use:
+
+* Consistent pixel scale.
+* Deliberate outlines.
+* Readable silhouettes.
+* Controlled color ramps.
+* Selective highlights.
+* Limited dithering.
+* Purposeful shading.
+* Consistent lighting direction.
+* Palette sharing.
+* Reusable animation components.
+
+Optimize assets for the GBA's native display.
+
+Design around supported sprite dimensions and tile-based rendering.
+
+Convert all source images into the precise indexed formats required by the chosen framework.
+
+Inspect conversion warnings.
+
+Do not include unused oversized artwork in the final ROM.
+
+---
+
+# PART XV — CINEMATICS AND VIDEO-ART DIRECTION
+
+## 62. In-engine cinematic sequences
+
+Create video-like cinematic experiences using the GBA's actual rendering capabilities.
+
+Do not depend on external MP4 playback.
+
+Use sequences of:
+
+* Illustrated backgrounds.
+* Animated sprite layers.
+* Palette fades.
+* Tilemap scrolling.
+* Parallax movement.
+* Dramatic text.
+* Portrait transitions.
+* Camera pans.
+* Particle effects.
+* Lighting flashes.
+* Music synchronization.
+
+The objective is to create the feeling of a premium animated handheld game.
+
+## 63. Opening cinematic
+
+Create an original opening sequence of approximately 10–20 seconds, subject to hardware performance and ROM-size constraints.
+
+Suggested storyboard:
+
+### Shot 1 — The Ancient Board
+
+A dark screen.
+
+A faint magical chessboard appears.
+
+The squares illuminate one by one.
+
+### Shot 2 — The Six Kingdoms
+
+Six glowing magical symbols appear around the board.
+
+Each symbolizes a kingdom.
+
+The music begins building.
+
+### Shot 3 — The Crown
+
+A golden crown materializes above the board.
+
+Its six fragments separate.
+
+### Shot 4 — The War
+
+Quick illustrations show fantasy armies, rulers, and magical attacks.
+
+### Shot 5 — The Hero
+
+The player-character silhouette appears.
+
+A magical chess piece glows in their hand.
+
+### Shot 6 — The Title
+
+The screen flashes.
+
+The title appears:
+
+**CHESS LEGENDS**
+
+**ARCANE WARS**
+
+A dramatic musical phrase concludes the sequence.
+
+The title screen becomes interactive.
+
+The entire opening must be skippable.
+
+## 64. Boss introduction cinematics
+
+Each boss receives a short cinematic presentation.
+
+Include:
+
+* Name.
+* Title.
+* Portrait.
+* Kingdom-specific effects.
+* Distinct dramatic sound.
+* Short dialogue line.
+
+The visual treatment should vary by kingdom.
+
+Avoid using exactly the same transition with only a palette change for every boss.
+
+Reuse animation infrastructure, but create distinct compositions.
+
+## 65. Ending cinematic
+
+After defeating the final boss:
+
+* The six fragments reunite.
+* The magical battlefield transforms.
+* The kingdoms appear restored.
+* The player-character is recognized as the new guardian of the Arcane Chess tradition.
+* The final story dialogue concludes.
+* Credits roll.
+
+Allow skipping without losing saved campaign completion.
+
+---
+
+# PART XVI — MUSIC AND SOUND DESIGN
+
+## 66. Music philosophy
+
+The soundtrack is a core component of the game's identity.
+
+It should sound like an original fantasy strategy game written for the Game Boy Advance.
+
+Do not use copyrighted music from existing games.
+
+Do not use silent placeholder tracks.
+
+Do not use a single repetitive beep melody for the entire game.
+
+Create real musical compositions with:
+
+* Melody.
+* Harmony.
+* Bass.
+* Rhythm.
+* Musical phrasing.
+* Dynamic structure.
+* Distinct emotional character.
+
+Use tracker-module music or another genuinely supported GBA music format.
+
+Follow the audio import requirements of the selected framework.
+
+Prefer efficient formats suitable for GBA playback.
+
+## 67. Required musical themes
+
+Create an original soundtrack covering the following situations.
+
+### TRACK 1 — MAIN TITLE
+
+Epic fantasy theme.
+
+Mood:
+
+* Mysterious.
+* Heroic.
+* Memorable.
+
+Instrumentation concept:
+
+* Bell-like lead.
+* String-like synthesizer.
+* Strong bass.
+* Dramatic percussion.
+
+### TRACK 2 — WORLD MAP
+
+Adventurous and melodic.
+
+A sense of travel and discovery.
+
+### TRACK 3 — VERDANT MARCH
+
+Peaceful but mysterious.
+
+Use a flowing melody and gentle rhythmic movement.
+
+### TRACK 4 — INFERNO BASTION
+
+Aggressive and intense.
+
+Strong percussion and driving bass.
+
+### TRACK 5 — FROZEN COURT
+
+Elegant and melancholic.
+
+Use bell-like tones and crystalline harmonies.
+
+### TRACK 6 — UMBRAL ARCHIVE
+
+Dark and mysterious.
+
+Use unusual melodic intervals and atmospheric accompaniment.
+
+### TRACK 7 — STORM SPIRE
+
+Energetic and urgent.
+
+Use rapid rhythmic figures and dramatic harmonic movement.
+
+### TRACK 8 — CROWN NEXUS
+
+Majestic and ominous.
+
+Reference musical motifs introduced earlier in the game.
+
+### TRACK 9 — STANDARD BATTLE
+
+Focused and energetic.
+
+Suitable for a strategic encounter.
+
+### TRACK 10 — BOSS BATTLE
+
+Dramatic, intense, and memorable.
+
+Use musical tension and a recognizable primary motif.
+
+### TRACK 11 — VICTORY
+
+Short celebratory fanfare.
+
+### TRACK 12 — DEFEAT
+
+Short somber theme.
+
+### TRACK 13 — ENDING / CREDITS
+
+Emotional arrangement of the main theme.
+
+This may be longer and more reflective.
+
+## 68. Musical composition requirements
+
+Where practical:
+
+* Use original melodic motifs.
+* Reuse motifs across related themes.
+* Compose proper loop points.
+* Avoid audible clicks at loop boundaries.
+* Use sensible instrument balance.
+* Keep music audible without masking sound effects.
+* Optimize sample data for ROM size.
+* Avoid expensive audio processing that disrupts gameplay.
+
+Short jingles may be shorter than full background tracks.
+
+At least the major background tracks must contain meaningful musical development rather than an endlessly repeated two-bar phrase.
+
+If generating tracker files programmatically, ensure they are genuine valid module files.
+
+Test their conversion and playback.
+
+Deliver editable source material or deterministic generator scripts where practical.
+
+## 69. Sound effects
+
+Implement original sounds for:
+
+* Menu selection.
+* Menu cancellation.
+* Cursor movement.
+* Selecting a chess piece.
+* Moving a piece.
+* Capturing a piece.
+* Invalid action.
+* Check.
+* Checkmate.
+* Stalemate.
+* Pawn promotion.
+* Shadow Step.
+* Phase Shift.
+* Ghost Walk.
+* Castle Swap.
+* Royal Command.
+* Royal Escape.
+* Achievement unlock.
+* Campaign level unlock.
+* Boss appearance.
+* Victory.
+* Defeat.
+
+Each magical ability should have a recognizable audio identity.
+
+Do not use the same effect for every spell.
+
+## 70. Audio options
+
+Allow players to configure:
+
+* Music on/off.
+* Sound effects on/off.
+* Music volume where supported.
+* Sound-effect volume where supported.
+
+Settings must persist.
+
+Sound playback must not crash if multiple events occur close together.
+
+Do not allow excessive overlapping sound effects to create distortion or major performance problems.
+
+---
+
+# PART XVII — USER INTERFACE AND CONTROLS
+
+## 71. General UI standard
+
+The interface must look like a polished commercial GBA game.
+
+Use original themed panels, borders, icons, and animations.
+
+Do not create a plain debug interface as the final UI.
+
+Text must be readable.
+
+Important information must not be hidden beneath decorative graphics.
+
+Every major screen should have a consistent navigation style.
+
+## 72. Main menu
+
+Include:
+
+**STORY MODE**
+
+**CLASSIC CHESS**
+
+**ARCANE CHESS**
+
+**CHALLENGES**
+
+**BOSS GAUNTLET**
+
+**GALLERY**
+
+**ACHIEVEMENTS**
+
+**OPTIONS**
+
+**CREDITS**
+
+Items may be organized across multiple menu pages if necessary.
+
+Do not crowd everything into one unreadable screen.
+
+Use smooth transitions between menus.
+
+Include animated cursor movement and selection feedback.
+
+## 73. Chessboard layout
+
+Use a fixed top-down 8×8 board.
+
+A practical layout is a board of approximately 128×128 pixels with a separate information area.
+
+Keep the full board visible.
+
+Use the remaining space for:
+
+* Current player.
+* Mana.
+* Selected piece.
+* Ability information.
+* Check indicator.
+* Captured-piece or material information.
+* Relevant button hints.
+
+If necessary, show secondary details in a temporary information overlay.
+
+The board must remain the visual priority.
+
+## 74. Controls
+
+Design around the GBA buttons.
+
+Suggested mapping:
+
+### D-pad
+
+Move the board cursor.
+
+### A
+
+Select a piece.
+
+Confirm a destination.
+
+Confirm a menu item.
+
+### B
+
+Cancel selection.
+
+Return to a previous menu.
+
+### L
+
+Switch between normal-move and magical-ability selection when applicable.
+
+### R
+
+Cycle relevant tactical information or move previews.
+
+### START
+
+Pause the match.
+
+Open the pause menu.
+
+### SELECT
+
+Open contextual help or inspect ability details.
+
+Avoid complicated combinations for ordinary actions.
+
+Ensure every necessary action can be performed without requiring precise timing.
+
+## 75. Legal move indicators
+
+When a player selects a piece:
+
+* Highlight normal legal destinations.
+* Distinguish legal captures.
+* Show available magical actions.
+* Display mana cost.
+* Indicate unavailable abilities.
+* Highlight the selected piece.
+
+Use different visual treatment for regular and magical moves.
+
+Never suggest an illegal destination as legal.
+
+If the player attempts an invalid action, provide clear feedback.
+
+## 76. Check and checkmate feedback
+
+When a king is in check:
+
+* Highlight the king.
+* Display a clear warning.
+* Play a short sound.
+* Preserve visibility of the board.
+
+When checkmate occurs:
+
+* Display a dramatic finish.
+* Play the appropriate audio.
+* Present the result.
+* Offer relevant next actions.
+
+Avoid displaying checkmate before considering available magical defenses.
+
+## 77. Menus during matches
+
+Provide:
+
+* Resume.
+* View controls.
+* View rules.
+* Animation settings.
+* Audio settings.
+* Save and quit.
+* Resign.
+* Return to menu with confirmation.
+
+For local multiplayer, support a clear player-turn transition.
+
+## 78. Tutorials
+
+Create an interactive tutorial system.
+
+The tutorial should teach:
+
+1. Basic board controls.
+2. Piece selection.
+3. Legal moves.
+4. Captures.
+5. Check and checkmate.
+6. Mana regeneration.
+7. Special abilities.
+8. Ability costs.
+9. King safety.
+10. Strategic combinations.
+
+Use guided examples.
+
+Do not require players to read a giant wall of text before playing.
+
+Tutorials must use the actual game mechanics.
+
+Avoid scripted fake interactions that do not correspond to the real rules.
+
+---
+
+# PART XVIII — ACHIEVEMENTS AND PROGRESSION
+
+## 79. Achievement system
+
+Implement at least twenty-four meaningful achievements.
+
+Suggested achievement categories:
+
+### Beginner achievements
+
+* Win the first match.
+* Complete the tutorial.
+* Deliver the first check.
+* Capture the first queen.
+
+### Classic Chess achievements
+
+* Win a Classic Chess match.
+* Win by checkmate.
+* Promote a pawn.
+* Successfully castle.
+* Perform an en passant capture.
+
+### Arcane Chess achievements
+
+* Cast the first magical ability.
+* Use Shadow Step successfully.
+* Use Phase Shift successfully.
+* Use Ghost Walk successfully.
+* Use Castle Swap successfully.
+* Use Royal Command successfully.
+* Use Royal Escape successfully.
+
+### Strategic achievements
+
+* Win against a higher AI difficulty.
+* Win while conserving substantial mana.
+* Win after performing multiple distinct spell types.
+* Defeat a boss without using Royal Escape.
+
+### Campaign achievements
+
+* Defeat the first boss.
+* Complete three kingdoms.
+* Complete all six kingdoms.
+* Defeat the final boss.
+
+Add additional achievements if appropriate.
+
+Each achievement must have:
+
+* A unique identifier.
+* A title.
+* A description.
+* A concrete trigger.
+* An unlock state.
+* An icon.
+* A persistent save representation.
+
+Do not award achievements through unrelated events.
+
+Use centralized game events or validated match results.
+
+## 80. Progression system
+
+Campaign victories unlock:
+
+* New worlds.
+* Character portraits.
+* Lore entries.
+* Board skins.
+* Music tracks in the gallery.
+* Visual customization.
+* Achievement progress.
+
+Avoid permanent gameplay power increases in competitive modes.
+
+The player's strategic skill should determine success.
+
+## 81. Gallery
+
+Create a gallery containing unlockable:
+
+* Character portraits.
+* Kingdom artwork.
+* Boss illustrations.
+* Lore descriptions.
+* Music tracks.
+* Optional animation demonstrations.
+
+Gallery entries must be connected to actual campaign progress.
+
+Locked entries must display appropriate feedback.
+
+---
+
+# PART XIX — CHALLENGE MODE
+
+## 82. Tactical puzzle system
+
+Create at least twelve authored chess challenges.
+
+Include both Classic and Arcane Chess puzzles.
+
+Examples:
+
+* Mate in one.
+* Mate in two.
+* Save the queen.
+* Win material using a knight fork.
+* Escape a dangerous check.
+* Use Shadow Step to create an attack.
+* Use Phase Shift to prepare a fork.
+* Use Ghost Walk to open an attacking diagonal.
+* Use Castle Swap to create a winning position.
+* Use Royal Command to establish a decisive threat.
+* Defend the king using Royal Escape.
+* Solve a multi-turn magical combination.
+
+## 83. Puzzle validation
+
+Puzzles must be actual playable positions.
+
+For every puzzle:
+
+* Define a legal starting state.
+* Define the side to move.
+* Define available mana.
+* Define special-ability availability.
+* Define the objective.
+* Define accepted winning conditions.
+* Validate the intended solution.
+
+Do not create impossible or ambiguous puzzles.
+
+If a puzzle requires a forced sequence, use a search-based validator or equivalent verification.
+
+Do not award success merely because the player followed one hardcoded sequence if other valid solutions exist.
+
+When appropriate, evaluate all legal opponent defenses.
+
+## 84. Puzzle rewards
+
+Reward puzzle completion with:
+
+* Achievement progress.
+* Gallery unlocks.
+* Challenge medals.
+* Campaign-related recognition where appropriate.
+
+Do not permanently improve the player's competitive piece strength.
+
+---
+
+# PART XX — SAVE SYSTEM
+
+## 85. Persistent storage
+
+Implement saving using a supported GBA cartridge save method.
+
+Prefer the framework's supported SRAM functionality where appropriate.
+
+Confirm compatibility with the chosen ROM configuration.
+
+Use a versioned save-data structure.
+
+Store:
+
+* Campaign progression.
+* Defeated bosses.
+* Unlocked worlds.
+* Achievements.
+* Player statistics.
+* Gallery unlocks.
+* Audio settings.
+* Animation settings.
+* Preferred difficulty.
+* Board theme.
+* Suspended match state where supported.
+
+## 86. Save integrity
+
+Use:
+
+* A recognizable save-data signature.
+* A format version.
+* Validation.
+* A checksum or CRC.
+* Recovery behavior for invalid data.
+* Redundant records where feasible.
+
+Never assume SRAM contains zeroes.
+
+Initialize unformatted save memory safely.
+
+Protect against invalid or corrupted data.
+
+Where practical, use alternating save records so that an interrupted write does not necessarily destroy the most recent valid save.
+
+Avoid excessive SRAM writes during every frame.
+
+## 87. Match suspension
+
+Allow the player to save and resume a game.
+
+The saved match must preserve:
+
+* Piece positions.
+* Side to move.
+* Mana values.
+* Castling rights.
+* En passant state.
+* Royal Escape usage flags.
+* Move counters.
+* Relevant repetition history.
+* Match mode.
+* AI difficulty.
+* Necessary scenario parameters.
+
+Do not regenerate mana again after loading.
+
+Do not reset castling rights.
+
+Do not reset Royal Escape usage.
+
+Do not silently lose repetition information required for correct adjudication.
+
+If complete history cannot be stored directly, use a bounded and well-documented representation that preserves correctness for the supported match length.
+
+## 88. Save-system testing
+
+Test:
+
+* First launch.
+* Empty SRAM.
+* Fresh save creation.
+* Save and reload.
+* Completed campaign data.
+* Suspended Arcane Chess.
+* Used Royal Escape before saving.
+* Castling rights before and after loading.
+* Repetition-related state.
+* Corrupted save records.
+* Unsupported save versions.
+* Reset confirmation.
+
+Never claim the save system is reliable based only on successful compilation.
+
+---
+
+# PART XXI — GAME POLISH
+
+## 89. Animation and feedback
+
+Create a responsive, satisfying interaction model.
+
+Include:
+
+* Animated menu highlights.
+* Cursor transitions.
+* Smooth piece movement.
+* Brief selection feedback.
+* Capture anticipation.
+* Mana consumption effects.
+* Spell activation effects.
+* Victory celebrations.
+* Achievement notifications.
+* Campaign map transitions.
+
+Animations should enhance clarity rather than obscure game state.
+
+## 90. Background atmosphere
+
+Use subtle environmental effects.
+
+Examples:
+
+### Forest
+
+Falling leaves.
+
+### Volcano
+
+Floating embers.
+
+### Ice palace
+
+Drifting snow.
+
+### Shadow realm
+
+Slow-moving magical particles.
+
+### Storm citadel
+
+Occasional lightning.
+
+### Royal palace
+
+Floating golden fragments.
+
+These effects must remain lightweight.
+
+Do not overwhelm the chessboard.
+
+Offer reduced-effects settings if necessary.
+
+## 91. Accessibility and usability
+
+Support:
+
+* High-contrast board theme.
+* Reduced animations.
+* Clear legal move indicators.
+* Readable fonts.
+* Consistent control mappings.
+* Optional sound muting.
+* Skippable cinematics.
+* Adjustable text speed.
+
+Important gameplay information must not depend exclusively on color.
+
+Use icons and shapes where appropriate.
+
+## 92. Interface consistency
+
+The game must have consistent:
+
+* Typography.
+* Menu behavior.
+* Selection feedback.
+* Audio feedback.
+* Panel styling.
+* Character naming.
+* Navigation.
+* Confirmation behavior.
+
+Avoid inconsistent screens that feel like unrelated prototypes.
+
+---
+
+# PART XXII — SOFTWARE QUALITY
+
+## 93. General engineering standards
+
+Write maintainable C++.
+
+Prefer clear logic over unnecessary abstraction.
+
+Use descriptive names.
+
+Keep game rules separate from rendering.
+
+Avoid duplicated rule logic.
+
+Avoid hardcoded board assumptions scattered throughout the project.
+
+Avoid unnecessary global mutable state.
+
+Use assertions where appropriate.
+
+Validate inputs.
+
+Handle invalid state safely.
+
+Do not silently continue after a fatal internal state inconsistency.
+
+## 94. Core rule tests
+
+Implement comprehensive automated tests.
+
+Include:
+
+* Pawn movement.
+* Knight movement.
+* Bishop movement.
+* Rook movement.
+* Queen movement.
+* King movement.
+* Captures.
+* Pinned pieces.
+* Checks.
+* Checkmate.
+* Stalemate.
+* Castling.
+* En passant.
+* Promotion.
+* Underpromotion.
+* Repetition.
+* Draw conditions.
+
+## 95. Perft verification
+
+For traditional chess, use known perft values.
+
+From the standard starting position:
+
+Depth 1: 20
+
+Depth 2: 400
+
+Depth 3: 8,902
+
+Depth 4: 197,281
+
+If computationally practical, verify additional depths and established test positions.
+
+Use multiple positions that expose difficult rules, not just the starting position.
+
+A successful starting-position perft test alone does not prove complete correctness.
+
+## 96. Arcane Chess ability tests
+
+For each ability, test:
+
+* Correct mana cost.
+* Insufficient mana.
+* Legal target.
+* Illegal target.
+* Board boundaries.
+* Occupied destinations.
+* Self-check prevention.
+* Correct resulting position.
+* Correct turn consumption.
+* Correct move counters.
+* Correct movement history.
+* Correct save/load representation.
+
+## 97. Important cross-system tests
+
+Explicitly test:
+
+1. Royal Escape becoming affordable after turn-start regeneration.
+2. Castle Swap invalidating castling rights.
+3. Royal Command invalidating rook castling rights.
+4. Royal Command moving a pawn.
+5. Shadow Step invalidating the initial pawn double move.
+6. Ghost Walk with a second blocker.
+7. Ghost Walk with an enemy blocker.
+8. Phase Shift creating a normal knight check.
+9. Magic resolving check.
+10. Magic illegally exposing the player's king.
+11. En passant expiring after a magical action.
+12. Checkmate detection with available magical defenses.
+13. Stalemate detection with affordable spells.
+14. Identical boards with different mana values.
+15. Identical boards with different Royal Escape flags.
+16. Save/reload during check.
+17. Save/reload after mana regeneration.
+18. Animation skipping during capture.
+19. AI cancellation while thinking.
+20. Repeated matches without state leakage.
+
+## 98. Rendering tests
+
+Verify:
+
+* All chess pieces are visible.
+* Cursor positioning matches board coordinates.
+* Legal move indicators align correctly.
+* Menu text remains within screen bounds.
+* Long dialogue does not overflow.
+* Sprites use compatible dimensions.
+* Palettes do not conflict.
+* Animations do not exceed practical sprite limits.
+* Scene transitions release or reuse resources properly.
+
+## 99. Audio tests
+
+Verify:
+
+* Music assets are valid.
+* Tracks can be loaded.
+* Tracks loop where intended.
+* Sound effects are audible.
+* Muting works.
+* Music transitions work.
+* Audio settings persist.
+* Rapid sound effects do not crash playback.
+
+## 100. Performance tests
+
+Measure or inspect:
+
+* AI search performance.
+* Frame pacing.
+* Memory consumption.
+* Scene transition overhead.
+* Audio playback stability.
+* Long-match behavior.
+* Repeated scene loading.
+* Save operations.
+
+Where supported, use emulator debugging and profiling tools.
+
+Avoid making unsupported performance claims.
+
+---
+
+# PART XXIII — COMPLETE ART AND AUDIO PIPELINE
+
+## 101. Reproducible assets
+
+The repository must include the editable or reproducible source of generated assets.
+
+Examples:
+
+* Pixel-art source images.
+* Palette specifications.
+* Sprite sheets.
+* Animation definitions.
+* Asset conversion metadata.
+* Sound-effect source files.
+* Music modules.
+* Scripts used to generate original artwork.
+* Scripts used to generate original music.
+
+The build process should not depend on private files that are missing from the delivered project.
+
+## 102. Asset conversion
+
+Convert graphical assets into actual GBA-compatible formats.
+
+Use the selected framework's supported asset import conventions.
+
+Ensure:
+
+* Supported bitmap format.
+* Correct palette indexing.
+* Correct transparent color.
+* Valid sprite dimensions.
+* Correct animation frame layout.
+* Valid music formats.
+* Valid sound-effect formats.
+* Appropriate compression.
+
+Do not assume arbitrary PNG, WAV, or MP3 files can simply be read from a ROM filesystem at runtime.
+
+## 103. Original compositions
+
+The soundtrack must be included in the ROM.
+
+If composing with generated tracker modules, use valid note, instrument, pattern, and sample structures.
+
+Create useful source data so musical changes can be made later.
+
+Do not satisfy the music requirement with an unused folder containing audio files.
+
+The music must actually play during gameplay.
+
+---
+
+# PART XXIV — REPOSITORY STRUCTURE
+
+## 104. Suggested organization
+
+Use a clear repository layout.
+
+For example:
+
+```text
+chess-legends-gba/
+|
+|-- Makefile
+|-- README.md
+|-- LICENSE
+|-- CREDITS.md
+|
+|-- src/
+|   |-- main.cpp
+|   |
+|   |-- core/
+|   |-- chess/
+|   |-- arcane/
+|   |-- ai/
+|   |-- graphics/
+|   |-- audio/
+|   |-- ui/
+|   |-- campaign/
+|   |-- persistence/
+|   |-- scenes/
+|
+|-- include/
+|
+|-- graphics/
+|   |-- boards/
+|   |-- pieces/
+|   |-- portraits/
+|   |-- animations/
+|   |-- backgrounds/
+|   |-- interface/
+|
+|-- audio/
+|   |-- music/
+|   |-- sfx/
+|
+|-- assets_source/
+|   |-- art/
+|   |-- music/
+|   |-- generators/
+|
+|-- data/
+|   |-- campaign/
+|   |-- dialogue/
+|   |-- puzzles/
+|   |-- achievements/
+|
+|-- tests/
+|   |-- chess/
+|   |-- arcane/
+|   |-- ai/
+|   |-- saves/
+|   |-- campaign/
+|
+|-- tools/
+|   |-- asset_pipeline/
+|   |-- balance/
+|   |-- validation/
+|
+|-- docs/
+|   |-- GAME_DESIGN.md
+|   |-- RULES.md
+|   |-- ARCHITECTURE.md
+|   |-- AI_DESIGN.md
+|   |-- ART_DIRECTION.md
+|   |-- AUDIO_DESIGN.md
+|   |-- BALANCE_REPORT.md
+|   |-- TEST_REPORT.md
+|   |-- BUILDING.md
+|
+|-- release/
+|   |-- ChessLegends.gba
+```
+
+Adapt this structure if the framework requires a different layout.
+
+The goal is maintainability and reproducibility.
+
+Do not create unnecessary empty folders merely to imitate this example.
+
+---
+
+# PART XXV — DEVELOPMENT EXECUTION STRATEGY
+
+## 105. Work in a logical sequence
+
+Although the user wants one autonomous development run, implement the project in a controlled order.
+
+### STAGE 1 — ENVIRONMENT
+
+Inspect the workspace.
+
+Confirm toolchain availability.
+
+Establish a minimal genuine GBA build.
+
+Verify that the initial ROM can be produced.
+
+### STAGE 2 — CHESS RULES
+
+Implement the board representation and legal chess rules.
+
+Build host-side tests.
+
+Validate classic move generation.
+
+### STAGE 3 — ARCANE RULES
+
+Implement mana.
+
+Implement the six abilities.
+
+Implement state transitions.
+
+Test interactions and edge cases.
+
+### STAGE 4 — AI
+
+Implement search.
+
+Implement evaluation.
+
+Implement the difficulty levels.
+
+Test legality and tactical strength.
+
+### STAGE 5 — GAMEPLAY INTERFACE
+
+Create the complete chessboard UI.
+
+Connect input to the engine.
+
+Connect AI to gameplay.
+
+Make complete matches playable.
+
+### STAGE 6 — VISUAL IDENTITY
+
+Produce the actual pixel-art assets.
+
+Replace temporary implementation graphics.
+
+Create original character designs.
+
+Integrate menus and backgrounds.
+
+### STAGE 7 — ANIMATION
+
+Implement movement animation.
+
+Implement captures.
+
+Implement spell effects.
+
+Implement cinematic battle transitions.
+
+### STAGE 8 — AUDIO
+
+Compose and import music.
+
+Generate sound effects.
+
+Test playback.
+
+Connect music to scenes.
+
+### STAGE 9 — CAMPAIGN
+
+Create the six kingdoms.
+
+Implement all campaign encounters.
+
+Implement dialogue.
+
+Implement bosses.
+
+Implement story progression.
+
+### STAGE 10 — ADDITIONAL MODES
+
+Implement:
+
+* Challenges.
+* Boss Gauntlet.
+* Achievements.
+* Gallery.
+* Settings.
+* Local multiplayer.
+
+### STAGE 11 — PERSISTENCE
+
+Implement and test SRAM saving.
+
+Test campaign saves and suspended games.
+
+### STAGE 12 — POLISH
+
+Improve animations, responsiveness, transitions, and visual consistency.
+
+### STAGE 13 — TESTING
+
+Run the complete automated test suite.
+
+Perform AI simulations.
+
+Inspect game balance.
+
+Fix discovered bugs.
+
+### STAGE 14 — RELEASE
+
+Build the final ROM.
+
+Test ROM startup where possible.
+
+Package the source.
+
+Write documentation.
+
+Produce a completion report.
+
+## 106. Internal iteration
+
+Do not interpret the stages as permission to deliver only the first completed stage.
+
+The requested output is the integrated game.
+
+Compile frequently.
+
+Test continuously.
+
+Fix integration problems immediately.
+
+Do not postpone all testing until the end.
+
+When a feature introduces a regression, identify and resolve the root cause.
+
+Avoid changing expected test results merely to hide an implementation problem.
+
+---
+
+# PART XXVI — BALANCE TESTING AND TUNING
+
+## 107. Balance validation
+
+The magical system must be tested rather than assumed balanced.
+
+Build simulation tools capable of comparing:
+
+* Different mana costs.
+* Different AI configurations.
+* Different starting positions.
+* Different strategic preferences.
+* Different spell usage policies.
+
+Where practical, run enough matches to identify obvious balance defects.
+
+## 108. Metrics
+
+Record:
+
+* Ability usage frequency.
+* Ability-associated material gains.
+* Average mana stored.
+* Average game duration.
+* Checkmate frequency.
+* Draw frequency.
+* White/Black results.
+* Search performance.
+* Royal Escape usage.
+* Tactical conversion success.
+
+Interpret results carefully.
+
+For example, a rarely used ability is not necessarily weak if it is intended for rare emergencies.
+
+A frequently used ability is not necessarily overpowered if it has limited impact.
+
+## 109. Manual design review
+
+After simulations, inspect representative games.
+
+Look for:
+
+* Repeatable dominant strategies.
+* Easy infinite loops.
+* Unreasonably defensive positions.
+* Excessively long matches.
+* Useless spells.
+* Forced winning sequences caused by rule exploits.
+* AI misunderstanding of mana.
+* AI failing to recognize magical checks.
+* AI wasting powerful abilities.
+
+Adjust values only when justified.
+
+## 110. Preserve competitive fairness
+
+Arcane Chess must not depend on:
+
+* Hidden random outcomes.
+* Secret opponent bonuses.
+* Paid upgrades.
+* Undocumented rules.
+* Scripted AI victories.
+* Permanent player stat increases.
+
+The player and AI must obey the same game rules.
+
+---
+
+# PART XXVII — QUALITY BAR AND ANTI-SHORTCUT RULES
+
+## 111. Do not fake completion
+
+The following are unacceptable final substitutes:
+
+* A menu that does not lead to gameplay.
+* A board with pieces that cannot move correctly.
+* A game without checkmate detection.
+* Fake magical abilities.
+* Empty campaign stages.
+* Placeholder boss battles.
+* A random-move AI.
+* Text labels instead of integrated music.
+* Static battle screenshots without functional animation.
+* Empty save menu items.
+* An invalid `.gba` file.
+* A renamed desktop executable.
+* A ROM that boots but cannot complete a match.
+
+## 112. Do not overbuild one component at the expense of the game
+
+A beautiful introduction is not enough.
+
+A sophisticated chess engine without a user interface is not enough.
+
+A collection of impressive artwork without actual gameplay is not enough.
+
+A fully playable game with no artistic identity does not meet the creative goal.
+
+Maintain balanced development attention.
+
+## 113. Prioritization when resources are constrained
+
+The complete specification is the target.
+
+If technical limitations create unavoidable tradeoffs, prioritize:
+
+1. Genuine functioning GBA ROM.
+2. Correct Classic Chess.
+3. Correct Arcane Chess.
+4. Working AI.
+5. Stable gameplay interface.
+6. Functional game modes.
+7. Persistent progress.
+8. Original music and sound.
+9. Original artwork.
+10. Rich animations and cinematics.
+11. Additional cosmetic refinements.
+
+This is a recovery strategy, not permission to skip features without attempting them.
+
+Never conceal incomplete requirements.
+
+A smaller feature that works correctly is preferable to a broken feature that pretends to be complete.
+
+However, make a serious effort to implement the entire requested experience.
+
+---
+
+# PART XXVIII — FINAL VERIFICATION
+
+## 114. Build verification
+
+Before declaring success:
+
+* Build the project.
+* Record the exact build command.
+* Record whether the command succeeded.
+* Verify that the `.gba` output exists.
+* Inspect the output as a GBA binary rather than trusting its extension.
+* Check that required assets were linked.
+* Check for obvious memory-size or asset conversion errors.
+
+## 115. Gameplay verification
+
+Verify representative complete games.
+
+At minimum, test:
+
+* Classic Chess against AI.
+* Arcane Chess against AI.
+* Local two-player mode.
+* Each magical ability.
+* Campaign progress.
+* Boss victory.
+* Challenge completion.
+* Achievement unlocking.
+* Save and reload.
+* Defeat and retry.
+* Checkmate and stalemate.
+
+## 116. Emulator verification
+
+If mGBA or another compatible emulator is available:
+
+Launch the generated ROM.
+
+Inspect startup.
+
+Navigate menus.
+
+Start an actual match.
+
+Verify piece movement.
+
+Verify rendering.
+
+Verify sound where possible.
+
+Verify the title screen and game state.
+
+Use emulator debugging or scripting if supported.
+
+Do not claim emulator testing if no emulator was actually executed.
+
+## 117. Performance verification
+
+Check that:
+
+* Menus respond normally.
+* Cursor movement is responsive.
+* Animation playback does not permanently freeze the game.
+* AI turns eventually complete.
+* The game handles repeated matches.
+* Saving does not corrupt gameplay state.
+* Audio and animation coexist without obvious catastrophic failures.
+
+## 118. Release artifact
+
+The desired final location is:
+
+```text
+release/ChessLegends.gba
+```
+
+Provide the full source project.
+
+Provide the build instructions.
+
+Provide the asset pipeline.
+
+Provide the test instructions.
+
+Provide all required original assets.
+
+The user should be able to take the ROM and run it in a compatible GBA emulator without compiling anything.
+
+---
+
+# PART XXIX — REQUIRED DOCUMENTATION
+
+## 119. README
+
+Write a readable README containing:
+
+* Game overview.
+* Screenshots if available.
+* Controls.
+* Game modes.
+* Build requirements.
+* Build instructions.
+* ROM output location.
+* Emulator instructions.
+* Save behavior.
+* Known limitations.
+
+## 120. Rules documentation
+
+Document:
+
+* Traditional chess rules.
+* Arcane mana.
+* All six abilities.
+* Spell restrictions.
+* Check and checkmate.
+* Draw behavior.
+* Special interactions.
+* Scenario rules.
+
+Make the rules precise enough that another developer could independently implement the same game.
+
+## 121. AI documentation
+
+Explain:
+
+* Search algorithm.
+* Evaluation function.
+* Difficulty differences.
+* Magical move integration.
+* Performance safeguards.
+* Known AI limitations.
+
+## 122. Art and audio documentation
+
+Document:
+
+* Art style.
+* Sprite dimensions.
+* Palette decisions.
+* Asset-generation process.
+* Animation conventions.
+* Music format.
+* Sound-effect format.
+* Original asset credits.
+
+## 123. Testing and balance report
+
+Include:
+
+* Tests actually executed.
+* Pass/fail results.
+* Build results.
+* Simulation count.
+* Performance observations.
+* Balance adjustments.
+* Remaining known issues.
+
+Distinguish verified facts from expectations or assumptions.
+
+---
+
+# PART XXX — FINAL RESPONSE FORMAT
+
+## 124. Completion report
+
+At the end of the development run, provide a factual report.
+
+Use the following structure.
+
+### 1. FINAL DELIVERABLE
+
+Where is the ROM?
+
+What is its exact filename?
+
+Was the build successful?
+
+Was the ROM launched in an emulator?
+
+### 2. IMPLEMENTED FEATURES
+
+Describe the features that actually work.
+
+### 3. CHESS ENGINE
+
+Describe classic chess correctness and testing.
+
+### 4. ARCANE SYSTEM
+
+Describe the implemented magical abilities and rule interactions.
+
+### 5. AI
+
+Describe the search system and difficulty levels.
+
+### 6. CAMPAIGN
+
+Report how many encounters are actually implemented and playable.
+
+### 7. ART AND ANIMATION
+
+Describe the actual artwork and combat animations included.
+
+### 8. MUSIC AND SOUND
+
+List the actual playable tracks and sound effects included in the ROM.
+
+### 9. SAVING
+
+Explain which data is saved and what was tested.
+
+### 10. TEST RESULTS
+
+List commands executed and results observed.
+
+### 11. PERFORMANCE
+
+Report measurements if available.
+
+### 12. KNOWN LIMITATIONS
+
+Disclose any unfinished or unverified components.
+
+### 13. HOW TO PLAY
+
+Explain how to launch and control the game.
+
+Do not mark features as implemented unless they genuinely work.
+
+---
+
+# PART XXXI — FINAL CREATIVE STANDARD
+
+## 125. The intended emotional experience
+
+When the player launches CHESS LEGENDS: ARCANE WARS, the experience should immediately communicate that this is a complete fantasy strategy game.
+
+The player sees an animated title sequence.
+
+Original music establishes the atmosphere.
+
+The main menu looks polished.
+
+The characters have identities.
+
+The kingdoms feel distinct.
+
+The chessboard is readable and responsive.
+
+The player understands how to move pieces.
+
+The magical powers are visually exciting.
+
+Using abilities produces meaningful strategic consequences.
+
+The AI presents a genuine challenge.
+
+Capturing a powerful enemy piece feels dramatic.
+
+Boss battles feel important.
+
+Campaign victories unlock meaningful content.
+
+The soundtrack changes with the world and encounter.
+
+The game remembers the player's progress.
+
+The experience should be satisfying even for someone who never reads the source code.
+
+## 126. Game-design identity
+
+The game should be:
+
+**Easy to understand.**
+
+**Difficult to master.**
+
+**Strategically rewarding.**
+
+**Visually memorable.**
+
+**Technically authentic.**
+
+**Mechanically consistent.**
+
+**Replayable.**
+
+**Fair.**
+
+**Rich in atmosphere.**
+
+**Respectful of the original GBA hardware.**
+
+Do not confuse complexity with depth.
+
+Do not confuse graphical effects with good art direction.
+
+Do not confuse large amounts of code with a finished product.
+
+Do not confuse a legal-move generator with an intelligent chess opponent.
+
+Do not confuse an elaborate plan with completed implementation.
+
+Make deliberate engineering and design decisions.
+
+Favor systems that reinforce one another.
+
+The final game should feel cohesive.
+
+---
+
+# PART XXXII — AUTONOMOUS EXECUTION DIRECTIVE
+
+You now have the complete product specification.
+
+Your next responsibility is implementation.
+
+Before coding, briefly inspect the repository and identify the development environment.
+
+Create an internal implementation plan.
+
+Then proceed with actual work.
+
+Do not respond with only a design proposal.
+
+Do not ask the user to manually create dozens of files.
+
+Do not ask the user to provide assets that can reasonably be produced using available tools.
+
+Do not repeatedly ask for approval of ordinary implementation choices.
+
+Use the available tools to create the actual project.
+
+Write code.
+
+Create assets.
+
+Generate music.
+
+Build the chess engine.
+
+Build the AI.
+
+Build the campaign.
+
+Integrate the graphics.
+
+Integrate the combat animations.
+
+Implement persistence.
+
+Compile.
+
+Test.
+
+Debug.
+
+Optimize.
+
+Build again.
+
+Continue through the development stages as far as the environment and execution limits genuinely permit.
+
+If a required external dependency cannot be obtained, attempt supported alternatives before concluding that the project is blocked.
+
+If you encounter a real blocker, report it precisely and preserve all completed work.
+
+Never fabricate progress.
+
+Never invent test results.
+
+Never label a broken prototype as a finished release.
+
+The user is asking for an unusually ambitious game.
+
+Treat the request seriously.
+
+Make this the strongest complete Game Boy Advance fantasy chess game you can genuinely produce within the available resources.
+
+# BEGIN DEVELOPMENT.

@@ -1,0 +1,10 @@
+# Sources and generated text stay LF on every platform (the build runs in MSYS2).
+* text=auto eol=lf
+
+# Binary assets and the release ROM
+*.bmp binary
+*.png binary
+*.gba binary
+*.xm binary
+*.mod binary
+*.wav binary

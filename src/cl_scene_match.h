@@ -16,6 +16,7 @@
 #include "cl_campaign.h"
 #include "cl_progress.h"
 #include "cl_scene.h"
+#include "cl_text.h"
 
 namespace cl::gba
 {
@@ -101,9 +102,11 @@ private:
     Game& _game;
     BoardView _view;
     PanelLayer _panel;
-    bn::vector<bn::sprite_ptr, 40> _panel_text;
-    bn::vector<bn::sprite_ptr, 12> _status_text;
+    TextCache _panel_text;                          // side panel lines (kept while unchanged)
+    TextCache _status_text;                         // status line above the board
     bn::vector<bn::sprite_ptr, 14> _hint_text;
+    const char* _hint_shown = nullptr;                  // text currently in _hint_text (not regenerated)
+    bn::vector<bn::sprite_ptr, 4> _thinking_text;      // animated "Thinking..." while the computer searches
     bn::vector<bn::sprite_ptr, 64> _overlay_text;
     bn::vector<bn::sprite_ptr, 32> _icons;     // ability icon / captured pieces in the side panel
     MoveList _legal;
@@ -225,11 +228,14 @@ private:
     // panel / status
     void _draw_panel_frame();
     void _refresh_panel();
+    void _draw_panel();
+    void _draw_status();
     void _panel_piece(const Position& pos);
     void _panel_task();
     void _panel_threats(const Position& pos);
     void _panel_game(const Position& pos);
     void _set_hint(const char* text);
+    void _draw_thinking();
     void _set_status();
     void _flash(const char* text);
     void _publish_state();

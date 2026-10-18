@@ -10,6 +10,7 @@
 #include "bn_sprite_palettes.h"
 #include "bn_sprites.h"
 #include "bn_string.h"
+#include "bn_timers.h"
 
 #include "cl_audio.h"
 #include "cl_progress.h"
@@ -30,6 +31,7 @@ namespace
     int cpu_max_percent = 0;
     int sprites_max = 0;
     int missed_frames = 0;
+    int profile_worst[int(ProfileSlot::COUNT)] = {};
 
     constexpr uint32_t stack_paint = 0xC0DEFACEu;
     uint32_t* stack_untouched_end = nullptr;     // first word above the never-touched part of the stack
@@ -87,6 +89,18 @@ void reset_cpu_statistics()
     cpu_max_percent = 0;
     sprites_max = 0;
     missed_frames = 0;
+
+    for(int& worst : profile_worst)
+    {
+        worst = 0;
+    }
+}
+
+void profile_note(ProfileSlot slot, int timer_ticks)
+{
+    const int percent = timer_ticks * 100 / bn::timers::ticks_per_frame();
+    int& worst = profile_worst[int(slot)];
+    worst = percent > worst ? percent : worst;
 }
 
 void frame_end()
@@ -111,6 +125,15 @@ void frame_end()
     ti.cpu_max = uint32_t(cpu_max_percent);
     missed_frames += bn::core::last_missed_frames();
     ti.fps_drops = uint32_t(missed_frames);
+    ti.prof_panel = uint32_t(profile_worst[int(ProfileSlot::PANEL)]);
+    ti.prof_pieces = uint32_t(profile_worst[int(ProfileSlot::PIECES)]);
+    ti.prof_execute = uint32_t(profile_worst[int(ProfileSlot::EXECUTE)]);
+    ti.prof_search_start = uint32_t(profile_worst[int(ProfileSlot::SEARCH_START)]);
+    ti.prof_apply = uint32_t(profile_worst[int(ProfileSlot::APPLY)]);
+    ti.prof_after_action = uint32_t(profile_worst[int(ProfileSlot::AFTER_ACTION)]);
+    ti.prof_begin_turn = uint32_t(profile_worst[int(ProfileSlot::BEGIN_TURN)]);
+    ti.prof_status = uint32_t(profile_worst[int(ProfileSlot::STATUS)]);
+    ti.prof_board_commit = uint32_t(profile_worst[int(ProfileSlot::BOARD_COMMIT)]);
 
     if((g.frame_counter & 15) == 0)
     {

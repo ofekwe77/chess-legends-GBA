@@ -1,6 +1,7 @@
 // CHESS LEGENDS: ARCANE WARS - dynamic tile layers.
 #include "cl_layers.h"
 
+#include "bn_assert.h"
 #include "bn_bg_tiles.h"
 #include "bn_memory.h"
 #include "bn_regular_bg_map_cell_info.h"
@@ -57,6 +58,20 @@ void TileLayer::set(int x, int y, int tile, bool flip_h, bool flip_v, int palett
     info.set_vertical_flip(flip_v);
     info.set_palette_id(palette_id);
     _cells[_map_item.cell_index(x, y)] = info.cell();
+    _dirty = true;
+}
+
+void TileLayer::set_quad(int x, int y, int first)
+{
+    BN_ASSERT(x >= 0 && y >= 0 && x + 1 < columns && y + 1 < rows, "Quad outside the layer");
+
+    // A map cell with no flip and palette 0 is just the tile index.
+    const int index = _map_item.cell_index(x, y);
+    const bn::regular_bg_map_cell step = first ? 1 : 0;
+    _cells[index] = bn::regular_bg_map_cell(first);
+    _cells[index + 1] = bn::regular_bg_map_cell(first + step);
+    _cells[index + columns] = bn::regular_bg_map_cell(first + 2 * step);
+    _cells[index + columns + 1] = bn::regular_bg_map_cell(first + 3 * step);
     _dirty = true;
 }
 

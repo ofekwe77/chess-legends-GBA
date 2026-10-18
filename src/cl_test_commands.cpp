@@ -74,7 +74,7 @@ bn::optional<SceneId> process_test_commands()
         setup = MatchSetup();
         setup.mode = ti.arg0 ? MatchMode::ARCANE : MatchMode::CLASSIC;
         setup.arcane = ti.arg0 != 0;
-        setup.human_mask = uint8_t(ti.arg1 ? ti.arg1 & 3 : 1);
+        setup.human_mask = uint8_t((ti.arg1 & 4) ? 0 : (ti.arg1 ? ti.arg1 & 3 : 1));    // 0: computer vs computer
         setup.difficulty = Difficulty(ti.arg2 & 3);
         setup.board_theme = uint8_t(ti.arg3 & 7);
         next = SceneId::MATCH;

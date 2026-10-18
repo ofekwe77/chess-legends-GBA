@@ -1,6 +1,7 @@
 // CHESS LEGENDS: ARCANE WARS - text rendering helpers.
 #include "cl_text.h"
 
+#include "bn_assert.h"
 #include "bn_sprite_text_generator.h"
 #include "bn_sprite_palette_item.h"
 
@@ -99,6 +100,81 @@ void print_big(bn::ivector<bn::sprite_ptr>& output, int x, int y, const bn::stri
     generator.set_palette_item(big_palette(color));
     configure(generator, align, bg_priority);
     generator.generate(x - 120, y + 8 - 80, text, output);
+}
+
+void TextCache::begin()
+{
+    for(Line& line : _lines)
+    {
+        line.used = false;
+    }
+}
+
+void TextCache::print(int x, int y, const bn::string_view& text, TextColor color, Align align, int bg_priority)
+{
+    const bool cacheable = text.size() <= 48;
+    Line* target = nullptr;
+
+    for(Line& line : _lines)
+    {
+        if(! line.used && line.x == x && line.y == y && line.align == align)
+        {
+            target = &line;
+            break;
+        }
+    }
+
+    if(target && cacheable && target->cached && target->text == text && target->color == color &&
+       target->bg_priority == bg_priority)
+    {
+        target->used = true;    // unchanged: the sprites stay
+        return;
+    }
+
+    if(! target)
+    {
+        BN_ASSERT(! _lines.full(), "Too many cached text lines");
+        _lines.emplace_back();
+        target = &_lines.back();
+        target->x = int16_t(x);
+        target->y = int16_t(y);
+        target->align = align;
+    }
+
+    target->sprites.clear();
+    target->text.clear();
+
+    if(cacheable)
+    {
+        target->text.append(text);
+    }
+
+    target->cached = cacheable;
+
+    target->color = color;
+    target->bg_priority = int8_t(bg_priority);
+    target->used = true;
+    cl::gba::print(target->sprites, x, y, text, color, align, bg_priority);
+}
+
+void TextCache::end()
+{
+    for(int i = 0; i < _lines.size();)
+    {
+        if(_lines[i].used)
+        {
+            ++i;
+        }
+        else
+        {
+            _lines.erase(_lines.begin() + i);
+        }
+    }
+}
+
+void TextCache::clear()
+{
+    _lines.clear();
 }
 
 int text_width(const bn::string_view& text)

@@ -478,6 +478,7 @@ const char* MatchScene::_idle_hint() const
 
 void MatchScene::_begin_turn()
 {
+    ProfileScope profile(ProfileSlot::BEGIN_TURN);
     if(_tutorial && _lesson_retry && ! _game.over())
     {
         // The learner's action did not do what the lesson asked: back to the lesson position.
@@ -506,10 +507,9 @@ void MatchScene::_begin_turn()
         return;
     }
 
-    _game.legal_actions(_legal);
-
     if(_human_to_move())
     {
+        _game.legal_actions(_legal);     // the computer generates its own actions
         if(_g.setup.human_mask == 3)
         {
             _open_handoff();
@@ -535,6 +535,7 @@ void MatchScene::_begin_turn()
 
 void MatchScene::_after_action(const ActionInfo& info)
 {
+    ProfileScope profile(ProfileSlot::AFTER_ACTION);
     _recorder.on_action(info, _game);
     grant_achievements(_recorder.earned());
 
@@ -1363,10 +1364,17 @@ int MatchScene::_animation_length(const Move& move) const
 
 void MatchScene::_execute(Move move)
 {
+    ProfileScope profile(ProfileSlot::EXECUTE);
     ActionInfo info;
 
     // The single state transition of the match.
-    if(! _game.apply(move, &info))
+    bool applied;
+    {
+        ProfileScope apply_profile(ProfileSlot::APPLY);
+        applied = _game.apply(move, &info);
+    }
+
+    if(! applied)
     {
         _flash("Illegal action.");
         return;
@@ -1941,6 +1949,7 @@ void MatchScene::_update_battle()
         _panel_text.clear();
         _status_text.clear();
         _hint_text.clear();
+        _hint_shown = nullptr;
         _icons.clear();
 
         const ActionInfo& info = _anim.info;
@@ -1992,11 +2001,19 @@ AiSettings MatchScene::_ai_settings() const
 
 bool MatchScene::think_frame()
 {
+    // The frame ends first; the scene's own work then opens the next frame, before the search continues, so the
+    // runner's budget (measured from the start of the frame) includes it.
+    _view.commit();
+    _panel.commit();
+    _publish_state();
+    frame_end();
+
     ++_think_phase;
 
+    // Only the dots move (redrawing the whole panel would cost a third of the frame the search needs).
     if((_think_phase & 7) == 0)
     {
-        _panel_dirty = true;
+        _draw_thinking();
     }
 
     if(_panel_dirty)
@@ -2014,10 +2031,6 @@ bool MatchScene::think_frame()
     _effects.update();
     _toast.update();
     _view.update();
-    _view.commit();
-    _panel.commit();
-    _publish_state();
-    frame_end();
     return _pause_requested;
 }
 
@@ -3044,8 +3057,15 @@ void MatchScene::_draw_panel_frame()
 
 void MatchScene::_refresh_panel()
 {
+    ProfileScope profile(ProfileSlot::PANEL);
     _panel_dirty = false;
-    _panel_text.clear();
+    _panel_text.begin();
+    _draw_panel();
+    _panel_text.end();
+}
+
+void MatchScene::_draw_panel()
+{
     _icons.clear();
 
     const Position& pos = _game.position();
@@ -3055,16 +3075,17 @@ void MatchScene::_refresh_panel()
 
     auto side_block = [&](Color side, int y, int gem_row)
     {
-        bn::string<24> name = _side_label(side);
+        const bn::string<24> name = _side_label(side);
         const bool to_move = pos.side == side && ! _game.over();
         const bool checked = to_move && pos.in_check();
 
+        // The name keeps its sprites from turn to turn; a gold diamond marks the side to move.
+        _panel_text.print(panel_x, y, name, checked ? TextColor::RED : TextColor::WHITE);
+
         if(to_move)
         {
-            name.append(" ◆");
+            _panel_text.print(panel_x + text_width(name) + 4, y, "◆", TextColor::GOLD);
         }
-
-        print(_panel_text, panel_x, y, name, checked ? TextColor::RED : (to_move ? TextColor::GOLD : TextColor::WHITE));
 
         if(arcane)
         {
@@ -3072,15 +3093,15 @@ void MatchScene::_refresh_panel()
             bn::string<16> mana;
             bn::ostringstream mana_stream(mana);
             mana_stream << pos.mana[side] << "/" << int(pos.rules.max_mana);
-            print(_panel_text, panel_x + 56, gem_row * 8, mana, TextColor::CYAN);
+            _panel_text.print(panel_x + 56, gem_row * 8, mana, TextColor::CYAN);
 
             if(checked)
             {
-                print(_panel_text, panel_x, gem_row * 8 + 10, ui::panel_check, TextColor::RED);
+                _panel_text.print(panel_x, gem_row * 8 + 10, ui::panel_check, TextColor::RED);
             }
             else
             {
-                print(_panel_text, panel_x, gem_row * 8 + 10, pos.escapes[side] ? ui::panel_escape_ready : ui::panel_escape_used,
+                _panel_text.print(panel_x, gem_row * 8 + 10, pos.escapes[side] ? ui::panel_escape_ready : ui::panel_escape_used,
                       pos.escapes[side] ? TextColor::GRAY : TextColor::RED);
             }
         }
@@ -3100,11 +3121,11 @@ void MatchScene::_refresh_panel()
                 mat << "=";
             }
 
-            print(_panel_text, panel_x, gem_row * 8, text, TextColor::GRAY);
+            _panel_text.print(panel_x, gem_row * 8, text, TextColor::GRAY);
 
             if(checked)
             {
-                print(_panel_text, panel_x, gem_row * 8 + 10, ui::panel_check, TextColor::RED);
+                _panel_text.print(panel_x, gem_row * 8 + 10, ui::panel_check, TextColor::RED);
             }
         }
     };
@@ -3115,11 +3136,12 @@ void MatchScene::_refresh_panel()
     // Middle block: the AI's thinking state, or the selected information view.
     if(_state == State::AI)
     {
-        constexpr const char* dots[] = { "Thinking", "Thinking.", "Thinking..", "Thinking..." };
-        print(_panel_text, panel_x, 60, dots[(_think_phase >> 3) & 3], TextColor::CYAN);
-        print(_panel_text, panel_x, 74, difficulty_name(_g.setup.difficulty), TextColor::GRAY);
+        _draw_thinking();
+        _panel_text.print(panel_x, 74, difficulty_name(_g.setup.difficulty), TextColor::GRAY);
         return;
     }
+
+    _thinking_text.clear();
 
     switch(_info)
     {
@@ -3147,14 +3169,14 @@ void MatchScene::_panel_task()
     bn::string<24> header;
     bn::ostringstream stream(header);
     stream << "LESSON " << (_g.setup.lesson + 1);
-    print(_panel_text, panel_x, 52, header, TextColor::CYAN);
+    _panel_text.print(panel_x, 52, header, TextColor::CYAN);
     TextSpan spans[layout::panel_lines];
     const int lines = wrap_lines(FontId::SMALL, l.task, bn::string_view(l.task).size(), layout::panel_text_width,
                                  spans, layout::panel_lines);
 
     for(int i = 0; i < lines; ++i)
     {
-        print(_panel_text, panel_x, 62 + i * 9, bn::string_view(l.task + spans[i].start, spans[i].length),
+        _panel_text.print(panel_x, 62 + i * 9, bn::string_view(l.task + spans[i].start, spans[i].length),
               TextColor::GOLD);
     }
 }
@@ -3169,14 +3191,14 @@ void MatchScene::_panel_piece(const Position& pos)
     {
         char square[3];
         square_name(focus, square);
-        print(_panel_text, panel_x, 56, ui::panel_empty_square, TextColor::GRAY);
-        print(_panel_text, panel_x, 70, square, TextColor::GRAY);
+        _panel_text.print(panel_x, 56, ui::panel_empty_square, TextColor::GRAY);
+        _panel_text.print(panel_x, 70, square, TextColor::GRAY);
         return;
     }
 
     // Chess name and fantasy class share the header line (tools/validation checks that both fit).
-    print(_panel_text, panel_x, 56, piece_title(type_of(piece)), TextColor::WHITE);
-    print(_panel_text, panel_x + layout::panel_text_width, 56, piece_class_name(type_of(piece)), TextColor::GRAY,
+    _panel_text.print(panel_x, 56, piece_title(type_of(piece)), TextColor::WHITE);
+    _panel_text.print(panel_x + layout::panel_text_width, 56, piece_class_name(type_of(piece)), TextColor::GRAY,
           Align::RIGHT);
 
     if(! arcane)
@@ -3197,7 +3219,7 @@ void MatchScene::_panel_piece(const Position& pos)
     }
 
     // The ability name has the full width; the icon stands beside the cost.
-    print(_panel_text, panel_x, 66, ability_name(ability), usable ? TextColor::CYAN : TextColor::GRAY);
+    _panel_text.print(panel_x, 66, ability_name(ability), usable ? TextColor::CYAN : TextColor::GRAY);
     bn::sprite_ptr icon = bn::sprite_items::ability_icons.create_sprite(panel_x + 8 - 120, 84 - 80,
                                                                          int(ability) + (usable ? 0 : 6));
     icon.set_bg_priority(0);
@@ -3206,27 +3228,27 @@ void MatchScene::_panel_piece(const Position& pos)
     bn::string<20> cost;
     bn::ostringstream stream(cost);
     stream << "Cost " << int(pos.rules.cost[ability]) << " ◆";
-    print(_panel_text, panel_x + ui::panel_icon_text_offset, 80, cost,
+    _panel_text.print(panel_x + ui::panel_icon_text_offset, 80, cost,
           affordable ? TextColor::WHITE : TextColor::RED);
 
     if(sealed)
     {
-        print(_panel_text, panel_x, 94, ui::panel_sealed, TextColor::RED);
+        _panel_text.print(panel_x, 94, ui::panel_sealed, TextColor::RED);
     }
     else if(_state == State::MAGIC || _state == State::COMMAND)
     {
-        print(_panel_text, panel_x, 94, ui::panel_pick_target, TextColor::GOLD);
+        _panel_text.print(panel_x, 94, ui::panel_pick_target, TextColor::GOLD);
     }
     else if(own && ! affordable)
     {
         bn::string<20> need;
         bn::ostringstream need_stream(need);
         need_stream << "Need " << int(pos.rules.cost[ability]) << " mana";
-        print(_panel_text, panel_x, 94, need, TextColor::RED);
+        _panel_text.print(panel_x, 94, need, TextColor::RED);
     }
     else if(own && usable && _state == State::SELECTED)
     {
-        print(_panel_text, panel_x, 94, ui::panel_cast, TextColor::GOLD);
+        _panel_text.print(panel_x, 94, ui::panel_cast, TextColor::GOLD);
     }
 }
 
@@ -3238,7 +3260,7 @@ void MatchScene::_panel_threats(const Position& pos)
     bn::string<24> header;
     bn::ostringstream header_stream(header);
     header_stream << ui::panel_threats << bn::string_view(square);   // (a char array would append all 3 bytes)
-    print(_panel_text, panel_x, 56, header, TextColor::CYAN);
+    _panel_text.print(panel_x, 56, header, TextColor::CYAN);
     int squares[16];
 
     // Attackers of the square on each side.
@@ -3249,16 +3271,16 @@ void MatchScene::_panel_threats(const Position& pos)
         bn::string<24> line;
         bn::ostringstream line_stream(line);
         line_stream << (side == WHITE ? "White: " : "Black: ") << count;
-        print(_panel_text, panel_x, 70 + c * 10, line, count ? TextColor::WHITE : TextColor::GRAY);
+        _panel_text.print(panel_x, 70 + c * 10, line, count ? TextColor::WHITE : TextColor::GRAY);
     }
 
-    print(_panel_text, panel_x, 94, ui::panel_threats_note, TextColor::GRAY);
+    _panel_text.print(panel_x, 94, ui::panel_threats_note, TextColor::GRAY);
 }
 
 void MatchScene::_panel_game(const Position& pos)
 {
     (void) pos;
-    print(_panel_text, panel_x, 54, ui::panel_captured, TextColor::CYAN);
+    _panel_text.print(panel_x, 54, ui::panel_captured, TextColor::CYAN);
 
     // The pieces each side has captured, strongest first, as small overlapping piece icons (up to 15 a row fit
     // the 84 px panel; the board holds that many fewer sprites).
@@ -3284,7 +3306,7 @@ void MatchScene::_panel_game(const Position& pos)
 
         if(! shown)
         {
-            print(_panel_text, panel_x, 64 + c * 10, "-", TextColor::GRAY);
+            _panel_text.print(panel_x, 64 + c * 10, "-", TextColor::GRAY);
         }
     }
 
@@ -3293,8 +3315,8 @@ void MatchScene::_panel_game(const Position& pos)
         bn::string<24> left;
         bn::ostringstream left_stream(left);
         append_moves_left(left_stream, _tracker.moves_left());
-        print(_panel_text, panel_x, 84, objective_name(_tracker.spec().type), TextColor::GOLD);
-        print(_panel_text, panel_x, 94, left, TextColor::GOLD);
+        _panel_text.print(panel_x, 84, objective_name(_tracker.spec().type), TextColor::GOLD);
+        _panel_text.print(panel_x, 94, left, TextColor::GOLD);
     }
     else if(! _last_move.is_null())
     {
@@ -3303,14 +3325,20 @@ void MatchScene::_panel_game(const Position& pos)
         bn::string<24> last;
         bn::ostringstream last_stream(last);
         last_stream << ui::panel_last << bn::string_view(coordinate);
-        print(_panel_text, panel_x, 90, last, TextColor::GRAY);
+        _panel_text.print(panel_x, 90, last, TextColor::GRAY);
     }
 }
 
 void MatchScene::_set_status()
 {
-    _status_text.clear();
+    ProfileScope profile(ProfileSlot::STATUS);
+    _status_text.begin();
+    _draw_status();
+    _status_text.end();
+}
 
+void MatchScene::_draw_status()
+{
     if(_message_frames > 0)
     {
         // Long flash texts (challenge hints) wrap over the top line and the board edge.
@@ -3319,7 +3347,7 @@ void MatchScene::_set_status()
 
         for(int i = 0; i < lines; ++i)
         {
-            print(_status_text, 4, i * 8, bn::string_view(_message.c_str() + spans[i].start, spans[i].length),
+            _status_text.print(4, i * 8, bn::string_view(_message.c_str() + spans[i].start, spans[i].length),
                   TextColor::RED);
         }
 
@@ -3330,7 +3358,7 @@ void MatchScene::_set_status()
 
     if(_game.over())
     {
-        print(_status_text, 4, 0, result_reason_name(_game.reason()), TextColor::GOLD);
+        _status_text.print(4, 0, result_reason_name(_game.reason()), TextColor::GOLD);
         return;
     }
 
@@ -3350,16 +3378,38 @@ void MatchScene::_set_status()
             stream << objective_name(_tracker.spec().type) << ": " << left << " left";
         }
 
-        print(_status_text, 4, 0, text, TextColor::GOLD);
+        _status_text.print(4, 0, text, TextColor::GOLD);
         return;
     }
 
-    stream << "Move " << pos.fullmove << "  " << side_name(pos.side) << " to play";
-    print(_status_text, 4, 0, text, TextColor::WHITE);
+    // Three pieces, so a turn regenerates only what changed: "Move 12", the side (in a fixed-width slot), "to play".
+    stream << "Move " << pos.fullmove;
+    _status_text.print(4, 0, text, TextColor::WHITE);
+    const int side_x = 4 + text_width(text) + 8;
+    _status_text.print(side_x, 0, side_name(pos.side), TextColor::WHITE);
+    const int side_width = bn::max(text_width("WHITE"), text_width("BLACK"));
+    _status_text.print(side_x + side_width + 4, 0, "to play", TextColor::WHITE);
+}
+
+void MatchScene::_draw_thinking()
+{
+    constexpr const char* dots[] = { "Thinking", "Thinking.", "Thinking..", "Thinking..." };
+    _thinking_text.clear();
+
+    if(_state == State::AI && ! _overlay_open)
+    {
+        print(_thinking_text, panel_x, 60, dots[(_think_phase >> 3) & 3], TextColor::CYAN);
+    }
 }
 
 void MatchScene::_set_hint(const char* text)
 {
+    if(text == _hint_shown)
+    {
+        return;     // same text already on screen (generating text costs a good part of a frame)
+    }
+
+    _hint_shown = text;
     _hint_text.clear();
 
     if(text[0])

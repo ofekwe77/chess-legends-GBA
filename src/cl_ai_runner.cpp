@@ -1,10 +1,12 @@
 // CHESS LEGENDS: ARCANE WARS - runs the AI on the console without freezing the interface.
 #include "cl_ai_runner.h"
 
+#include "bn_core.h"
 #include "bn_timer.h"
 #include "bn_timers.h"
 
 #include "cl_globals.h"
+#include "cl_scene.h"
 
 extern "C" void cl_call_with_stack(void* stack_top, void (*function)(void*), void* argument);
 
@@ -28,6 +30,7 @@ namespace
         bn::timer* timer;
         int frames;
         bool cancelled;
+        bool started;       // the first poll has happened (search start measured)
     };
 
     Job job;
@@ -50,12 +53,20 @@ namespace
         return ai;
     }
 
+    // Yield once 70% of the current frame has been used (by the search and by whatever the scene did earlier in the
+    // frame): the rest is Butano's update before the next VBlank. Polled at every node (~4% of a frame here).
+    constexpr int frame_budget = bn::timers::ticks_per_frame() * 70 / 100;
+
     bool poll(void* /*user*/, uint32_t /*nodes*/)
     {
-        // Yield once ~85% of a frame has been spent searching: bn::core::update() then waits for the next VBlank.
-        constexpr int budget = bn::timers::ticks_per_frame() * 85 / 100;
 
-        if(job.timer->elapsed_ticks() >= budget)
+        if(! job.started)
+        {
+            job.started = true;
+            profile_note(ProfileSlot::SEARCH_START, job.timer->elapsed_ticks());
+        }
+
+        if(bn::core::current_cpu_ticks() >= frame_budget)
         {
             ++job.frames;
 
@@ -63,8 +74,6 @@ namespace
             {
                 job.cancelled = true;
             }
-
-            job.timer->restart();
         }
 
         return job.cancelled;
@@ -88,7 +97,7 @@ ThinkReport ai_think(Game& game, const AiSettings& settings, bool standard_start
     bn::timer timer;
     job.game = &game;
     job.settings = settings;
-    job.settings.poll_mask = 7;
+    job.settings.poll_mask = 0;
     job.standard_start = standard_start;
     job.frame_function = frame_function;
     job.user = user;
@@ -96,8 +105,16 @@ ThinkReport ai_think(Game& game, const AiSettings& settings, bool standard_start
     job.timer = &timer;
     job.frames = 0;
     job.cancelled = false;
+    job.started = false;
 
     cl_call_with_stack(ai_stack + ai_stack_words, run_job, nullptr);
+
+    // Playing the chosen action costs a good part of a frame: it starts a fresh frame when this one is well used.
+    if(! job.cancelled && bn::core::current_cpu_ticks() >= bn::timers::ticks_per_frame() / 3)
+    {
+        ++job.frames;
+        job.cancelled = job.frame_function(job.user);
+    }
 
     ThinkReport report;
     report.decision = job.decision;

@@ -6,6 +6,7 @@
 #include "bn_optional.h"
 #include "bn_sprite_animate_actions.h"
 #include "bn_sprite_palette_item.h"
+#include "bn_sprite_palette_ptr.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
@@ -56,7 +57,9 @@ public:
     // Dark-side army palette: 0 = obsidian default, 1-6 = kingdom factions.
     void set_dark_faction(int faction);
 
-    // Recreates every piece sprite from the position.
+    // Brings the piece sprites in line with the position: a square whose piece did not change keeps its sprite
+    // (put back at rest: position, army palette, visible, opaque), a changed square gets a new sprite or loses its
+    // own. A normal move touches two or three sprites instead of all of them.
     void rebuild_pieces(const Position& pos);
 
     // Releases every piece sprite (a battle scene needs the sprites; rebuild_pieces brings them back).
@@ -111,8 +114,9 @@ public:
 private:
     TileLayer _board;
     TileLayer _marker_layer;
-    bn::vector<bn::sprite_ptr, 32> _pieces;
-    int8_t _piece_index[128];
+    bn::optional<bn::sprite_ptr> _pieces[64];     // by sq64
+    Piece _shown[64];                             // piece drawn by each sprite
+    bn::optional<bn::sprite_palette_ptr> _army_palettes[2];   // current army palettes (light, dark faction)
     Marker _markers[64];
     bn::optional<bn::sprite_ptr> _cursor;
     bn::optional<bn::sprite_animate_action<4>> _cursor_action;
@@ -127,7 +131,10 @@ private:
     bool _coordinates = true;
     bool _cursor_wanted = true;
     bool _squares_dirty = true;
+    int16_t _drawn_base[64];        // square tile last drawn on each square (-1: redraw)
+    int16_t _drawn_marker[64];      // marker tile last drawn on each square
 
+    void _invalidate_squares();
     void _draw_frame();
     void _draw_squares();
     void _display_cell(int sq, int& column, int& row) const;

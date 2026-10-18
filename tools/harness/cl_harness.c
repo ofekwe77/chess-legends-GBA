@@ -465,6 +465,33 @@ static int run_script(FILE* script)
                 run_frame();
             }
         }
+        else if(! strcmp(c, "trace") && argc >= 3)
+        {
+            /* trace FIELD N: runs N frames and prints the field after each one (frame pacing, CPU load). */
+            if(! ensure_ti())
+            {
+                return 2;
+            }
+
+            const struct ti_field* f = lookup_field(argv[1]);
+
+            if(! f)
+            {
+                fprintf(stderr, "line %d: unknown field %s\n", line_no, argv[1]);
+                return 2;
+            }
+
+            long n = strtol(argv[2], NULL, 0);
+            printf("  trace %s:", argv[1]);
+
+            for(long i = 0; i < n; ++i)
+            {
+                run_frame();
+                printf(" %u", (unsigned) ti_read(f));
+            }
+
+            printf("\n");
+        }
         else if(! strcmp(c, "hold"))
         {
             for(int i = 1; i < argc; ++i)

@@ -1,6 +1,8 @@
 // CHESS LEGENDS: ARCANE WARS - chessboard presentation.
 #include "cl_board_view.h"
 
+#include "cl_scene.h"
+
 #include "bn_bg_palette_item.h"
 #include "bn_sprite_palette_item.h"
 
@@ -83,15 +85,17 @@ BoardView::BoardView(int theme, bool flipped) :
     _theme(theme),
     _flipped(flipped)
 {
-    for(int8_t& index : _piece_index)
+    for(Piece& piece : _shown)
     {
-        index = -1;
+        piece = EMPTY;
     }
 
     for(Marker& m : _markers)
     {
         m = Marker::NONE;
     }
+
+    _invalidate_squares();
 
     _board.clear(0);
     _marker_layer.clear(0);
@@ -100,6 +104,7 @@ BoardView::BoardView(int theme, bool flipped) :
     _board.commit();
     _marker_layer.commit();
 
+    set_dark_faction(0);
     _cursor = bn::sprite_items::board_cursor.create_sprite(square_center(_cursor_sq));
     _cursor->set_bg_priority(1);
     _cursor->set_z_order(-10);
@@ -119,14 +124,27 @@ void BoardView::set_flipped(bool flipped)
     {
         _flipped = flipped;
         _draw_frame();
-        _squares_dirty = true;
+        _invalidate_squares();     // every square moves on screen
         set_cursor(_cursor_sq);
     }
+}
+
+void BoardView::_invalidate_squares()
+{
+    for(int index = 0; index < 64; ++index)
+    {
+        _drawn_base[index] = -1;
+        _drawn_marker[index] = -1;
+    }
+
+    _squares_dirty = true;
 }
 
 void BoardView::set_dark_faction(int faction)
 {
     _faction = faction;
+    _army_palettes[WHITE] = bn::sprite_palette_items::army_white.create_palette();
+    _army_palettes[BLACK] = dark_palette(faction).create_palette();
 }
 
 void BoardView::apply_army_palette(bn::sprite_ptr& sprite, Color color) const
@@ -218,16 +236,38 @@ void BoardView::set_coordinates_visible(bool visible)
     }
 }
 
+namespace
+{
+    // Texture variant of each square (a fixed pattern: square_variant[sq64]).
+    constexpr bool variant_of(int index)
+    {
+        return (((index & 7) * 3 + (index >> 3) * 5) % 7) < 3;
+    }
+
+    constexpr bool square_variant[64] = {
+        variant_of(0), variant_of(1), variant_of(2), variant_of(3), variant_of(4), variant_of(5), variant_of(6),
+        variant_of(7), variant_of(8), variant_of(9), variant_of(10), variant_of(11), variant_of(12), variant_of(13),
+        variant_of(14), variant_of(15), variant_of(16), variant_of(17), variant_of(18), variant_of(19),
+        variant_of(20), variant_of(21), variant_of(22), variant_of(23), variant_of(24), variant_of(25),
+        variant_of(26), variant_of(27), variant_of(28), variant_of(29), variant_of(30), variant_of(31),
+        variant_of(32), variant_of(33), variant_of(34), variant_of(35), variant_of(36), variant_of(37),
+        variant_of(38), variant_of(39), variant_of(40), variant_of(41), variant_of(42), variant_of(43),
+        variant_of(44), variant_of(45), variant_of(46), variant_of(47), variant_of(48), variant_of(49),
+        variant_of(50), variant_of(51), variant_of(52), variant_of(53), variant_of(54), variant_of(55),
+        variant_of(56), variant_of(57), variant_of(58), variant_of(59), variant_of(60), variant_of(61),
+        variant_of(62), variant_of(63),
+    };
+}
+
 void BoardView::_draw_squares()
 {
     using namespace board_tiles;
 
+    // Only squares whose look changed are written (a full redraw cost most of a frame on the console).
     for(int index = 0; index < 64; ++index)
     {
         const int sq = sq88(index);
-        const int f = file_of(sq);
-        const int r = rank_of(sq);
-        const bool light = ((f + r) & 1) != 0;
+        const bool light = (((index & 7) + (index >> 3)) & 1) != 0;
         int base;
 
         if(sq == _check)
@@ -244,8 +284,14 @@ void BoardView::_draw_squares()
         }
         else
         {
-            bool variant = ((f * 3 + r * 5) % 7) < 3;
-            base = light ? (variant ? light_b : light_a) : (variant ? dark_b : dark_a);
+            base = light ? (square_variant[index] ? light_b : light_a) : (square_variant[index] ? dark_b : dark_a);
+        }
+
+        const int marker = marker_tile(_markers[index]);
+
+        if(base == _drawn_base[index] && marker == _drawn_marker[index])
+        {
+            continue;
         }
 
         int column;
@@ -253,26 +299,17 @@ void BoardView::_draw_squares()
         _display_cell(sq, column, row);
         const int mx = 1 + column * 2;
         const int my = 2 + row * 2;
-        _board.set(mx, my, base);
-        _board.set(mx + 1, my, base + 1);
-        _board.set(mx, my + 1, base + 2);
-        _board.set(mx + 1, my + 1, base + 3);
 
-        const int marker = marker_tile(_markers[index]);
-
-        if(marker)
+        if(base != _drawn_base[index])
         {
-            _marker_layer.set(mx, my, marker);
-            _marker_layer.set(mx + 1, my, marker + 1);
-            _marker_layer.set(mx, my + 1, marker + 2);
-            _marker_layer.set(mx + 1, my + 1, marker + 3);
+            _board.set_quad(mx, my, base);
+            _drawn_base[index] = int16_t(base);
         }
-        else
+
+        if(marker != _drawn_marker[index])
         {
-            _marker_layer.set(mx, my, 0);
-            _marker_layer.set(mx + 1, my, 0);
-            _marker_layer.set(mx, my + 1, 0);
-            _marker_layer.set(mx + 1, my + 1, 0);
+            _marker_layer.set_quad(mx, my, marker);
+            _drawn_marker[index] = int16_t(marker);
         }
     }
 
@@ -329,6 +366,7 @@ void BoardView::set_marker(int sq, Marker marker)
 
 void BoardView::commit()
 {
+    ProfileScope profile(ProfileSlot::BOARD_COMMIT);
     if(_squares_dirty)
     {
         _draw_squares();
@@ -340,45 +378,61 @@ void BoardView::commit()
 
 void BoardView::clear_pieces()
 {
-    _pieces.clear();
-
-    for(int8_t& index : _piece_index)
+    for(int index = 0; index < 64; ++index)
     {
-        index = -1;
+        _pieces[index].reset();
+        _shown[index] = EMPTY;
     }
 }
 
 void BoardView::rebuild_pieces(const Position& pos)
 {
-    clear_pieces();
+    ProfileScope profile(ProfileSlot::PIECES);
 
     for(int index = 0; index < 64; ++index)
     {
         const int sq = sq88(index);
         const Piece piece = pos.board[sq];
+        bn::optional<bn::sprite_ptr>& sprite = _pieces[index];
 
-        if(piece == EMPTY)
+        if(piece != _shown[index])
         {
-            continue;
+            sprite.reset();
+            _shown[index] = piece;
+
+            if(piece != EMPTY)
+            {
+                sprite = bn::sprite_items::pieces.create_sprite(square_center(sq), type_of(piece) - 1);
+                sprite->set_bg_priority(2);
+            }
         }
 
-        bn::sprite_ptr sprite = bn::sprite_items::pieces.create_sprite(square_center(sq), type_of(piece) - 1);
-        apply_army_palette(sprite, color_of(piece));
-        sprite.set_bg_priority(2);
-        sprite.set_z_order(0);
-        _piece_index[sq] = int8_t(_pieces.size());
-        _pieces.push_back(bn::move(sprite));
+        if(sprite)
+        {
+            // Back at rest (an animation may have moved, tinted, hidden or faded it).
+            sprite->set_position(square_center(sq));
+            sprite->set_z_order(0);
+            sprite->set_visible(true);
+            sprite->set_blending_enabled(false);
+            const bn::sprite_palette_ptr& army = _army_palettes[color_of(piece)].value();
+
+            if(sprite->palette() != army)
+            {
+                sprite->set_palette(army);
+            }
+        }
     }
 }
 
 bn::sprite_ptr* BoardView::sprite_at(int sq)
 {
-    if(! on_board(sq) || _piece_index[sq] < 0)
+    if(! on_board(sq))
     {
         return nullptr;
     }
 
-    return &_pieces[_piece_index[sq]];
+    bn::optional<bn::sprite_ptr>& sprite = _pieces[sq64(sq)];
+    return sprite ? &*sprite : nullptr;
 }
 
 void BoardView::hide_piece(int sq)
@@ -411,9 +465,12 @@ void BoardView::set_visible(bool visible)
     _board.bg().set_visible(visible);
     _marker_layer.bg().set_visible(visible);
 
-    for(bn::sprite_ptr& sprite : _pieces)
+    for(bn::optional<bn::sprite_ptr>& sprite : _pieces)
     {
-        sprite.set_visible(visible);
+        if(sprite)
+        {
+            sprite->set_visible(visible);
+        }
     }
 
     if(_cursor)

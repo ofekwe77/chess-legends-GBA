@@ -23,6 +23,10 @@ public:
 
     void clear(int tile = 0);
     void set(int x, int y, int tile, bool flip_h = false, bool flip_v = false, int palette_id = 0);
+
+    // Fast 2x2 block (no flip, palette 0): tiles first, first + 1 (top row), first + 2, first + 3; first = 0
+    // clears the block. (x, y) must leave room for the block.
+    void set_quad(int x, int y, int first);
     [[nodiscard]] int tile_at(int x, int y) const;
     void commit();
 

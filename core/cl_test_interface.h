@@ -28,7 +28,9 @@
     X(error_count) X(stack_free) X(ewram_free) X(fps_drops) X(battle_scenes) X(cinematic) X(unlocked_worlds) \
     X(challenge_medals) X(text_speed) X(anim_mode) X(volume_music) X(volume_sfx) X(gauntlet_stage) \
     X(tutorial_step) X(gallery_unlocked) X(promotion_menu) X(pause_menu) X(load_status) X(toast) \
-    X(moves_left) X(story_step) X(suspend_present) X(objective_status) X(challenge) X(sprites) X(sprites_max)
+    X(moves_left) X(story_step) X(suspend_present) X(objective_status) X(challenge) X(sprites) X(sprites_max) \
+    X(prof_panel) X(prof_pieces) X(prof_execute) X(prof_search_start) X(prof_apply) X(prof_after_action) \
+    X(prof_begin_turn) X(prof_status) X(prof_board_commit)
 
 #define CL_TI_DECLARE(name) uint32_t name;
 
@@ -46,7 +48,7 @@ enum cl_ti_command
 {
     CL_TI_CMD_NONE = 0,
     CL_TI_CMD_SET_SEED = 1,          /* arg0: AI / cosmetic random seed */
-    CL_TI_CMD_START_MATCH = 2,       /* arg0: mode, arg1: human mask, arg2: difficulty, arg3: theme */
+    CL_TI_CMD_START_MATCH = 2,       /* arg0: arcane, arg1: human mask (4: computer vs computer), arg2: level, arg3: theme */
     CL_TI_CMD_PLAY_MOVE = 3,         /* arg0: packed move data (must be legal) */
     CL_TI_CMD_SET_ANIMATIONS = 4,    /* arg0: animation mode */
     CL_TI_CMD_GOTO_SCENE = 5,        /* arg0: scene id */

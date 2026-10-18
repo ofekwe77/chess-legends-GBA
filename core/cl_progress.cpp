@@ -235,6 +235,12 @@ void MatchRecorder::on_finish(const Game& game, bool objective_success)
     // Contract: the result is final (scenarios call Game::finish_objective first).
     CL_ASSERT(game.over());
     _finished = true;
+
+    if(_context.human_mask == 0)
+    {
+        return;     // computer against computer: nobody to credit
+    }
+
     const bool two_players = _context.human_mask == 3;
     const bool counts_as_match = _context.kind != MatchKind::CHALLENGE && _context.kind != MatchKind::TUTORIAL;
     const GameResult result = game.result();

@@ -3,6 +3,7 @@
 #define CL_SCENE_H
 
 #include "bn_optional.h"
+#include "bn_timer.h"
 #include "bn_sprite_ptr.h"
 #include "bn_unique_ptr.h"
 #include "bn_vector.h"
@@ -31,6 +32,43 @@ void set_current_scene(SceneId id);
 
 // Restarts the CPU usage peak, sprite peak and missed frame measurements (test interface).
 void reset_cpu_statistics();
+
+// Profiled sections: the worst duration of each since the last statistics reset is published to the test
+// interface (prof_*) in percent of a frame.
+enum class ProfileSlot : uint8_t
+{
+    PANEL,          // match side panel redraw
+    PIECES,         // board piece sprites rebuilt
+    EXECUTE,        // one action applied and presented (animations off: up to the next turn)
+    SEARCH_START,   // AI turn start to its first chance to yield a frame
+    APPLY,          // the rules engine applying one action
+    AFTER_ACTION,   // statistics, achievements, objectives after an action
+    BEGIN_TURN,     // turn start (legal actions, status, hints, game over)
+    STATUS,         // status line redraw
+    BOARD_COMMIT,   // board squares / markers redrawn and committed
+    COUNT
+};
+
+void profile_note(ProfileSlot slot, int timer_ticks);
+
+// Measures the enclosing scope.
+class ProfileScope
+{
+public:
+    explicit ProfileScope(ProfileSlot slot) :
+        _slot(slot)
+    {
+    }
+
+    ~ProfileScope()
+    {
+        profile_note(_slot, _timer.elapsed_ticks());
+    }
+
+private:
+    bn::timer _timer;
+    ProfileSlot _slot;
+};
 
 // Fills the free part of the IWRAM stack with a known pattern. Called first thing at boot (interrupts are not yet
 // enabled); frame_end then publishes how much of the stack has never been touched (test interface stack_free).

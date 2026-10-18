@@ -1,0 +1,168 @@
+# Performance measurements (MD.txt 100, 117). Each section resets the CPU statistics (cmd 8) and prints what
+# happened since: missed frames (fps_drops, accumulated from Butano's missed-frame count), the worst frame
+# (cpu_max, percent of one frame), sprites, free EWRAM heap and never-touched IWRAM stack.
+# A fresh save opens with the intro: START skips it.
+wait scene == 1 120
+frames 40
+tap START
+wait scene == 2 120
+frames 30
+cmd 11
+tap START
+wait scene == 3 120
+frames 30
+
+echo [menu idle: 300 frames on the main menu]
+cmd 8
+frames 300
+print fps_drops cpu_max ewram_free stack_free sprites_max
+expect fps_drops == 0
+snap ewram_free
+
+echo [scene loading: 12 transitions through the extras and back to the main menu]
+cmd 8
+cmd 5 10
+wait scene == 10 200
+frames 10
+cmd 5 11
+wait scene == 11 200
+frames 10
+cmd 5 12
+wait scene == 12 200
+frames 10
+cmd 5 3
+wait scene == 3 200
+frames 10
+cmd 5 10
+wait scene == 10 200
+frames 10
+cmd 5 11
+wait scene == 11 200
+frames 10
+cmd 5 12
+wait scene == 12 200
+frames 10
+cmd 5 3
+wait scene == 3 200
+frames 10
+cmd 5 6
+wait scene == 6 200
+frames 10
+cmd 5 8
+wait scene == 8 200
+frames 10
+cmd 5 14
+wait scene == 14 200
+frames 10
+cmd 5 3
+wait scene == 3 200
+frames 30
+print fps_drops cpu_max ewram_free stack_free
+echo [the heap is back where it was before the twelve loads]
+same ewram_free
+
+echo [menus idle inside scenes: story map 300 frames]
+cmd 5 6
+wait scene == 6 200
+frames 30
+cmd 8
+frames 300
+print fps_drops cpu_max sprites_max
+expect fps_drops == 0
+
+echo [AI thinking: Apprentice then Grandmaster answer 1. e4 (animations off)]
+cmd 4 3
+cmd 2 1 1 0 0
+wait match_active == 1 200
+wait plies == 0 200
+wait ui_state == 0 200
+frames 20
+cmd 8
+cmd 3 4200980
+wait side_to_move == 1 30
+wait side_to_move == 0 6000
+print ai_nodes ai_depth ai_frames fps_drops cpu_max
+cmd 2 1 1 3 0
+wait plies == 0 200
+wait ui_state == 0 200
+frames 20
+cmd 8
+cmd 3 4200980
+wait side_to_move == 1 30
+wait side_to_move == 0 6000
+print ai_nodes ai_depth ai_frames fps_drops cpu_max
+
+echo [a duel with FULL animations: hot-seat exd5]
+cmd 4 0
+cmd 2 1 3 0 1
+wait plies == 0 200
+wait ui_state == 7 100
+frames 20
+tap A
+wait ui_state == 0 60
+cmd 3 4200980
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+cmd 3 4202979
+wait ui_state == 7 200
+tap A
+wait ui_state == 0 60
+cmd 8
+cmd 3 35660212
+wait ui_state == 14 100
+wait ui_state == 7 400
+print fps_drops cpu_max sprites_max stack_free
+
+echo [spell effects: Royal Escape (darkness, seal, particles)]
+cmd 10 10
+wait challenge == 10 200
+wait ui_state == 0 100
+frames 20
+cmd 8
+cmd 3 25170694
+wait animating == 1 30
+wait animating == 0 120
+print fps_drops cpu_max sprites_max
+expect fps_drops == 0
+
+echo [saving: SAVE & QUIT from a running match (suspended match + profile), back to the main menu]
+cmd 2 1 1 1 0
+wait plies == 0 200
+wait ui_state == 0 200
+frames 20
+cmd 8
+tap START
+frames 10
+tap DOWN
+tap DOWN
+tap DOWN
+tap A
+wait scene == 3 300
+print fps_drops cpu_max suspend_present
+
+echo [long match: computer against computer, Apprentice, animations off, played to the end]
+cmd 4 3
+cmd 2 1 4 0 0
+wait plies == 0 200
+cmd 8
+wait result != 0 60000
+print plies result reason fps_drops cpu_max ewram_free stack_free sprites_max prof_execute prof_panel prof_search_start
+echo [regression bounds: under one missed frame per ply, at least 2 KB of stack never touched]
+expect fps_drops < 60
+expect stack_free > 2048
+snap ewram_free
+
+echo [second long match: rematch with FULL animations (duels, spells) to the end]
+cmd 4 0
+frames 30
+tap A
+wait result == 0 200
+cmd 8
+wait result != 0 90000
+print plies result reason battle_scenes spells captures fps_drops cpu_max ewram_free stack_free sprites_max
+echo [a whole second game left the heap where the first one left it]
+same ewram_free
+expect sprites_max < 120
+frames 60
+shot long_match_end

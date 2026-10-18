@@ -221,6 +221,16 @@ TEST_CASE("progress", modes_restrict_victory_achievements)
     CHECK(earned(Achievement::FRIENDLY_RIVALS));
     CHECK(! earned(Achievement::FIRST_VICTORY));
 
+    // Computer against computer: nothing is credited to anyone.
+    cl::MatchContext spectator;
+    spectator.kind = cl::MatchKind::ARCANE;
+    spectator.human_mask = 0;
+    recorder().start(spectator);
+    CHECK(test_util::setup(game, "6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1", true));
+    CHECK(act(game, "d1d8"));
+    recorder().on_finish(game, true);
+    CHECK_EQ(recorder().earned(), uint64_t(0));
+
     // Marathon: 160 actions (80 moves each side) in a finished match.
     recorder().start(vs_computer(cl::MatchKind::ARCANE));
     CHECK(test_util::setup(game, "4k3/8/8/8/8/8/8/R3K3 w - - 0 1", true));

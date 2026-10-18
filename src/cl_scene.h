@@ -29,8 +29,12 @@ void frame_end();
 // Current scene id (mirrored to the test interface).
 void set_current_scene(SceneId id);
 
-// Restarts the CPU usage peak measurement (test interface).
+// Restarts the CPU usage peak, sprite peak and missed frame measurements (test interface).
 void reset_cpu_statistics();
+
+// Fills the free part of the IWRAM stack with a known pattern. Called first thing at boot (interrupts are not yet
+// enabled); frame_end then publishes how much of the stack has never been touched (test interface stack_free).
+void paint_stack();
 
 // Directional input with auto-repeat (cursor movement in menus and on the board).
 class RepeatInput

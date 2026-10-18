@@ -10,6 +10,7 @@
 
 int main()
 {
+    cl::gba::paint_stack();
     bn::core::init();
     bn::bg_palettes::set_transparent_color(bn::color(3, 2, 8));
 

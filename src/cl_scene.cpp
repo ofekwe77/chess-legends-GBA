@@ -17,6 +17,10 @@
 
 #include "bn_sprite_items_banner.h"
 
+// Linker symbols (Butano): end of the static IWRAM data and top of the IWRAM stack.
+extern unsigned BN_IWRAM_END;
+extern unsigned BN_IWRAM_TOP;
+
 namespace cl::gba
 {
 
@@ -25,6 +29,52 @@ namespace
     SceneId current_scene = SceneId::BOOT;
     int cpu_max_percent = 0;
     int sprites_max = 0;
+    int missed_frames = 0;
+
+    constexpr uint32_t stack_paint = 0xC0DEFACEu;
+    uint32_t* stack_untouched_end = nullptr;     // first word above the never-touched part of the stack
+
+    uint32_t* stack_bottom()
+    {
+        const uintptr_t end = reinterpret_cast<uintptr_t>(&BN_IWRAM_END);
+        return reinterpret_cast<uint32_t*>((end + 3) & ~uintptr_t(3));
+    }
+
+    // Bytes of stack never used since boot: the painted words still intact above the static data. The boundary
+    // only moves down, so each measurement scans just the untouched part.
+    int stack_free_bytes()
+    {
+        if(! stack_untouched_end)
+        {
+            return 0;
+        }
+
+        uint32_t* bottom = stack_bottom();
+        uint32_t* word = bottom;
+
+        while(word < stack_untouched_end && *word == stack_paint)
+        {
+            ++word;
+        }
+
+        stack_untouched_end = word;
+        return reinterpret_cast<uint8_t*>(word) - reinterpret_cast<uint8_t*>(bottom);
+    }
+}
+
+void paint_stack()
+{
+    // Everything from the static data up to 256 bytes below the current stack pointer is free stack.
+    uintptr_t stack_pointer = 0;
+    asm volatile("mov %0, sp" : "=r" (stack_pointer));
+    uint32_t* limit = reinterpret_cast<uint32_t*>((stack_pointer - 256) & ~uintptr_t(3));
+
+    for(uint32_t* word = stack_bottom(); word < limit; ++word)
+    {
+        *word = stack_paint;
+    }
+
+    stack_untouched_end = limit;
 }
 
 void set_current_scene(SceneId id)
@@ -36,6 +86,7 @@ void reset_cpu_statistics()
 {
     cpu_max_percent = 0;
     sprites_max = 0;
+    missed_frames = 0;
 }
 
 void frame_end()
@@ -58,6 +109,14 @@ void frame_end()
     }
 
     ti.cpu_max = uint32_t(cpu_max_percent);
+    missed_frames += bn::core::last_missed_frames();
+    ti.fps_drops = uint32_t(missed_frames);
+
+    if((g.frame_counter & 15) == 0)
+    {
+        ti.stack_free = uint32_t(stack_free_bytes());
+    }
+
     ti.ewram_free = uint32_t(bn::memory::available_alloc_ewram());
     const int sprites = bn::sprites::used_items_count();
     sprites_max = sprites > sprites_max ? sprites : sprites_max;

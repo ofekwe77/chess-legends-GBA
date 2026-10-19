@@ -33,6 +33,7 @@
 #include <mgba-util/vfs.h>
 #include <mgba/internal/arm/arm.h>
 
+#include <direct.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -50,6 +51,26 @@ static struct mCore* g_core;
 static uint32_t g_framebuffer[256 * SCREEN_H];
 static uint32_t g_keys;
 static const char* g_out_dir = ".";
+
+/* Creates a directory and its missing parents (like mkdir -p); existing directories are fine. */
+static void make_directories(const char* path)
+{
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "%s", path);
+
+    for(char* p = buffer + 1; *p; ++p)
+    {
+        if(*p == '/' || *p == '\\')
+        {
+            const char saved = *p;
+            *p = 0;
+            _mkdir(buffer);
+            *p = saved;
+        }
+    }
+
+    _mkdir(buffer);
+}
 static int g_quiet;
 static int g_game_log;
 static uint32_t g_ti_address;
@@ -822,6 +843,7 @@ int main(int argc, char** argv)
         return 2;
     }
 
+    make_directories(g_out_dir);    /* screenshots and audio captures go there */
     crc_init();
     static struct mLogger logger = { .log = quiet_log };
     mLogSetDefaultLogger(&logger);

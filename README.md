@@ -91,7 +91,7 @@ Requirements, every command and the project layout: [docs/BUILDING.md](docs/BUIL
 
 ## Known limitations
 
-* Verified in the mGBA emulator (headless, scripted, and the regular player), not on real hardware.
+* Verified in the mGBA emulator (mGBA 0.10.5, headless, by scripted scenarios), not on real hardware.
 * The computer needs time at the higher levels: on the console about 0.4 s (Apprentice), 2 s (Knight), 5 s
   (Sorcerer) and 8 s (Grandmaster) for a middlegame move. The interface keeps running at 60 fps meanwhile.
 * The computer rarely uses Castle Swap and Royal Command; both are situational tools (see the balance report).

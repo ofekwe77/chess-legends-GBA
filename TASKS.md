@@ -31,7 +31,7 @@ Emulator scenarios live in `tests/emu/` (run all with `bash tools/cl.sh emu-all`
 | A1 | Negamax/AB/ID/PVS/TT/killers/history/quiescence/check ext. | DONE | core/cl_search*.cpp |
 | A2 | 4 difficulties, personalities, opening choices | DONE | cl_ai.cpp, test_ai.cpp |
 | A3 | Host AI-vs-AI simulator with metrics (45) | DONE | tools/balance/simulate.cpp |
-| A4 | Balance report from executed simulations (107-110) | TODO | |
+| A4 | Balance report from executed simulations (107-110) | DONE | docs/BALANCE_REPORT.md: 3020 games, 23 experiments, logs in docs/balance_logs |
 
 ## Modes, UI, content
 | Id | Requirement | Status | Evidence |
@@ -50,7 +50,7 @@ Emulator scenarios live in `tests/emu/` (run all with `bash tools/cl.sh emu-all`
 | Id | Requirement | Status | Evidence |
 |----|-------------|--------|----------|
 | V1 | Pieces, fonts, board themes, markers, cursor, UI panels, icons | DONE | assets_source/gen_*.py |
-| V2 | Title logo, menu/map/kingdom/credits backgrounds | WIP | backdrops and title scene done; logo art pending |
+| V2 | Title logo, menu/map/kingdom/credits backgrounds | DONE | gen_logo.py (title logo), gen_backdrops.py (8 backdrops) |
 | V3 | Portraits (6 bosses + player + supporting) | DONE | 14 portraits x 3 expressions |
 | V4 | Battle sprites (6 classes, idle/attack/defeat), battle scenes | DONE | gen_battle.py; battle.txt |
 | V5 | Spell effects (6), particles, atmosphere | DONE | spells.txt; particle fields in cinematics and map |
@@ -61,6 +61,6 @@ Emulator scenarios live in `tests/emu/` (run all with `bash tools/cl.sh emu-all`
 ## Release
 | Id | Requirement | Status | Evidence |
 |----|-------------|--------|----------|
-| Q1 | Performance measurements (100, 117) | WIP | stack_free / fps_drops / cpu_max published; analysis pending |
-| D1 | README, RULES, ARCHITECTURE, AI_DESIGN, ART, AUDIO, BALANCE, TEST, BUILDING docs | TODO | |
-| D2 | release/ChessLegends.gba + final report (124) | TODO | |
+| Q1 | Performance measurements (100, 117) | DONE | tests/emu/perf.txt (with regression bounds); docs/TEST_REPORT.md section 5 |
+| D1 | README, RULES, ARCHITECTURE, AI_DESIGN, ART, AUDIO, BALANCE, TEST, BUILDING docs | DONE | README.md, docs/*.md |
+| D2 | release/ChessLegends.gba + final report (124) | DONE | tools/verify_release.sh passes; ROM committed in release/ |

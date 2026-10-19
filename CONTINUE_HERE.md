@@ -46,23 +46,23 @@ verified; nothing here is aspirational. Requirement inventory with evidence: `TA
 ## Done and verified
 
 1. Classic chess (36 perft positions) and Arcane Chess (mana, six abilities, every interaction rule).
-2. AI: negamax alpha-beta, 4 difficulties x 7 personalities, opening book, deterministic node budgets.
+2. AI: negamax alpha-beta, 4 difficulties x 7 personalities, opening book, deterministic node budgets; on the
+   console it yields at every node from a 75% frame budget (0.4 s to 7.9 s per middlegame move, 60 fps kept).
 3. Saves: versioned CRC records, A/B slots, profile + suspended match, verified SRAM writes.
 4. Content: 6 kingdoms, 18 encounters with dialogue, 14 challenges, 6 gauntlet stages, 10 tutorial lessons,
    32 achievements, gallery, statistics; every puzzle proven and every string fitted by `tools/cl.sh validate`.
-5. Every scene: intro and ending cinematics, title, main menu, match setup, match (all modes), story map and
-   dialogue, challenges, gauntlet, gallery, achievements, options, credits, tutorial.
-6. Audio: 13 original XM tracks and 23 sound effects, played throughout, options persisted.
-7. Capture battle scenes (6 classes, attacks, defeat reactions, camera, floor, hit-stop, skip) and board spell
-   effects for all six abilities (16x16 effect frames, tint palettes).
-8. Tests: host 72 tests / 9222 checks; validation 3157 checks; emulator scenarios 10/10 (audio, battle,
-   cinema, extras, gameplay, modes, smoke, spells, story, tutorial).
+5. Every scene, cinematics, title logo; 13 original XM tracks and 23 sound effects.
+6. Capture battle scenes for six classes and board spell effects for all six abilities.
+7. Performance pass: AI stall fixed, TT / eval-cache generations, incremental board and text redraws; measured by
+   `tests/emu/perf.txt` (computer against computer misses < 1% of frames).
+8. Balance study: 3020 simulated games (docs/BALANCE_REPORT.md); no rule value changed.
+9. Documentation: README.md and docs/ (RULES, BUILDING, ARCHITECTURE, AI_DESIGN, ART_DIRECTION, AUDIO_DESIGN,
+   BALANCE_REPORT, TEST_REPORT).
+10. Release: `tools/verify_release.sh` builds and verifies `release/ChessLegends.gba` (tests, full validation,
+    warning-free build, ROM inspection, 11/11 emulator scenarios on the release ROM).
 
-## Next
+## Possible future work
 
-- Performance pass (MD.txt 100/117): explain `fps_drops` / `cpu_max` (scene loads, saves, AI slices),
-  measure AI speed, transitions, saves, long matches, repeated scene loading.
-- Balance simulations and BALANCE_REPORT (MD.txt 107-110).
-- Art polish: thicker battle figures, a title logo.
-- Docs: README, RULES, ARCHITECTURE, AI_DESIGN, ART_DIRECTION, AUDIO_DESIGN, BALANCE_REPORT, TEST_REPORT,
-  BUILDING. Release: `release/ChessLegends.gba`, `tools/verify_release.sh`. Final 13-section report.
+- Not yet tried on real hardware (only mGBA).
+- Larger, more detailed battle characters; faster AI (the node search could move to IWRAM if space allows).
+- The AI rarely casts Castle Swap and Royal Command (see the balance report).
